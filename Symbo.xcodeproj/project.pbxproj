@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -57,7 +57,7 @@
 		B2BC4CB41EF22A6400B3189A /* CenteredWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2BC4CB31EF22A6400B3189A /* CenteredWindow.swift */; };
 		B2C229231EF223C50015AB33 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C229221EF223C50015AB33 /* AppDelegate.swift */; };
 		B2C229271EF223C50015AB33 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B2C229261EF223C50015AB33 /* Assets.xcassets */; };
-		B2C2ED8C289AC09900B7FA40 /* MacSymbolicatorCLI in CopyFiles */ = {isa = PBXBuildFile; fileRef = B21EFA55289A981400CA69B1 /* MacSymbolicatorCLI */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		B2C2ED8C289AC09900B7FA40 /* SymboCLI in CopyFiles */ = {isa = PBXBuildFile; fileRef = B21EFA55289A981400CA69B1 /* SymboCLI */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		B2EC0F4126450D0B00E5473C /* DSYMTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2EC0F4026450D0B00E5473C /* DSYMTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -94,7 +94,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				B2C2ED8C289AC09900B7FA40 /* MacSymbolicatorCLI in CopyFiles */,
+				B2C2ED8C289AC09900B7FA40 /* SymboCLI in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -110,11 +110,11 @@
 		B2036AEC28DDE81700ED1268 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B2036AED28DDE81700ED1268 /* Samples */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Samples; sourceTree = "<group>"; };
 		B2036AEE28DDE81700ED1268 /* Spindumps */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Spindumps; sourceTree = "<group>"; };
-		B212510C20CD123800F36050 /* MacSymbolicatorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacSymbolicatorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B212510C20CD123800F36050 /* SymboTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SymboTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B212510E20CD123900F36050 /* MacSymbolicatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacSymbolicatorTests.swift; sourceTree = "<group>"; };
 		B212511620CD125E00F36050 /* SymbolicatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolicatorTests.swift; sourceTree = "<group>"; };
 		B21CA7E71EFCB61500AD9B75 /* FileSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSearch.swift; sourceTree = "<group>"; };
-		B21EFA55289A981400CA69B1 /* MacSymbolicatorCLI */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MacSymbolicatorCLI; sourceTree = BUILT_PRODUCTS_DIR; };
+		B21EFA55289A981400CA69B1 /* SymboCLI */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SymboCLI; sourceTree = BUILT_PRODUCTS_DIR; };
 		B21EFA57289A981400CA69B1 /* CLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLI.swift; sourceTree = "<group>"; };
 		B21EFA69289AAB6600CA69B1 /* ViewableLogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewableLogController.swift; sourceTree = "<group>"; };
 		B227F8CC263512E2004131A2 /* InputCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputCoordinator.swift; sourceTree = "<group>"; };
@@ -139,7 +139,7 @@
 		B2B74D8E1EF8E9CC000BBFD6 /* StringExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtensions.swift; sourceTree = "<group>"; };
 		B2B74D901EF8F7B6000BBFD6 /* ReportFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportFile.swift; sourceTree = "<group>"; };
 		B2BC4CB31EF22A6400B3189A /* CenteredWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CenteredWindow.swift; sourceTree = "<group>"; };
-		B2C2291F1EF223C50015AB33 /* MacSymbolicator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacSymbolicator.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B2C2291F1EF223C50015AB33 /* Symbo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Symbo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2C229221EF223C50015AB33 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B2C229261EF223C50015AB33 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B2C2292B1EF223C50015AB33 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -187,7 +187,7 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
-		B212510D20CD123900F36050 /* MacSymbolicatorTests */ = {
+		B212510D20CD123900F36050 /* SymboTests */ = {
 			isa = PBXGroup;
 			children = (
 				B212510E20CD123900F36050 /* MacSymbolicatorTests.swift */,
@@ -199,15 +199,15 @@
 				B2EC0F4026450D0B00E5473C /* DSYMTests.swift */,
 				B2036AE828DDE7FA00ED1268 /* Resources */,
 			);
-			path = MacSymbolicatorTests;
+			path = SymboTests;
 			sourceTree = "<group>";
 		};
-		B21EFA56289A981400CA69B1 /* MacSymbolicatorCLI */ = {
+		B21EFA56289A981400CA69B1 /* SymboCLI */ = {
 			isa = PBXGroup;
 			children = (
 				B21EFA57289A981400CA69B1 /* CLI.swift */,
 			);
-			path = MacSymbolicatorCLI;
+			path = SymboCLI;
 			sourceTree = "<group>";
 		};
 		B27931321EF2872700DDAA7D /* Resources */ = {
@@ -291,9 +291,9 @@
 			isa = PBXGroup;
 			children = (
 				B2F64E012B9339F700D1410D /* .swiftlint.yml */,
-				B2C229211EF223C50015AB33 /* MacSymbolicator */,
-				B212510D20CD123900F36050 /* MacSymbolicatorTests */,
-				B21EFA56289A981400CA69B1 /* MacSymbolicatorCLI */,
+				B2C229211EF223C50015AB33 /* Symbo */,
+				B212510D20CD123900F36050 /* SymboTests */,
+				B21EFA56289A981400CA69B1 /* SymboCLI */,
 				B2B74D851EF775F0000BBFD6 /* Frameworks */,
 				B27931321EF2872700DDAA7D /* Resources */,
 				B2C229201EF223C50015AB33 /* Products */,
@@ -303,14 +303,14 @@
 		B2C229201EF223C50015AB33 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B2C2291F1EF223C50015AB33 /* MacSymbolicator.app */,
-				B212510C20CD123800F36050 /* MacSymbolicatorTests.xctest */,
-				B21EFA55289A981400CA69B1 /* MacSymbolicatorCLI */,
+				B2C2291F1EF223C50015AB33 /* Symbo.app */,
+				B212510C20CD123800F36050 /* SymboTests.xctest */,
+				B21EFA55289A981400CA69B1 /* SymboCLI */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		B2C229211EF223C50015AB33 /* MacSymbolicator */ = {
+		B2C229211EF223C50015AB33 /* Symbo */ = {
 			isa = PBXGroup;
 			children = (
 				B2B74D951EF910EA000BBFD6 /* Controllers */,
@@ -319,15 +319,15 @@
 				B2B74D931EF910D6000BBFD6 /* Models */,
 				B2B74D921EF910CB000BBFD6 /* Extensions */,
 			);
-			path = MacSymbolicator;
+			path = Symbo;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		B212510B20CD123800F36050 /* MacSymbolicatorTests */ = {
+		B212510B20CD123800F36050 /* SymboTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B212511320CD123900F36050 /* Build configuration list for PBXNativeTarget "MacSymbolicatorTests" */;
+			buildConfigurationList = B212511320CD123900F36050 /* Build configuration list for PBXNativeTarget "SymboTests" */;
 			buildPhases = (
 				B212510820CD123800F36050 /* Sources */,
 				B212510920CD123800F36050 /* Frameworks */,
@@ -338,14 +338,14 @@
 			dependencies = (
 				B212511220CD123900F36050 /* PBXTargetDependency */,
 			);
-			name = MacSymbolicatorTests;
+			name = SymboTests;
 			productName = MacSymbolicatorTests;
-			productReference = B212510C20CD123800F36050 /* MacSymbolicatorTests.xctest */;
+			productReference = B212510C20CD123800F36050 /* SymboTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		B21EFA54289A981400CA69B1 /* MacSymbolicatorCLI */ = {
+		B21EFA54289A981400CA69B1 /* SymboCLI */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B21EFA5B289A981400CA69B1 /* Build configuration list for PBXNativeTarget "MacSymbolicatorCLI" */;
+			buildConfigurationList = B21EFA5B289A981400CA69B1 /* Build configuration list for PBXNativeTarget "SymboCLI" */;
 			buildPhases = (
 				B21EFA51289A981400CA69B1 /* Sources */,
 				B21EFA52289A981400CA69B1 /* Frameworks */,
@@ -355,17 +355,17 @@
 			);
 			dependencies = (
 			);
-			name = MacSymbolicatorCLI;
+			name = SymboCLI;
 			packageProductDependencies = (
 				B21EFA66289A98AF00CA69B1 /* ArgumentParser */,
 			);
 			productName = MacSymbolicatorCLI;
-			productReference = B21EFA55289A981400CA69B1 /* MacSymbolicatorCLI */;
+			productReference = B21EFA55289A981400CA69B1 /* SymboCLI */;
 			productType = "com.apple.product-type.tool";
 		};
-		B2C2291E1EF223C50015AB33 /* MacSymbolicator */ = {
+		B2C2291E1EF223C50015AB33 /* Symbo */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B2C2292F1EF223C50015AB33 /* Build configuration list for PBXNativeTarget "MacSymbolicator" */;
+			buildConfigurationList = B2C2292F1EF223C50015AB33 /* Build configuration list for PBXNativeTarget "Symbo" */;
 			buildPhases = (
 				B2C2291B1EF223C50015AB33 /* Sources */,
 				B23E161420CD07FB0020DD37 /* SwiftLint */,
@@ -378,9 +378,9 @@
 			dependencies = (
 				B2C2ED8E289AC0A500B7FA40 /* PBXTargetDependency */,
 			);
-			name = MacSymbolicator;
+			name = Symbo;
 			productName = MacSymbolicator;
-			productReference = B2C2291F1EF223C50015AB33 /* MacSymbolicator.app */;
+			productReference = B2C2291F1EF223C50015AB33 /* Symbo.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -391,7 +391,7 @@
 			attributes = {
 				LastSwiftUpdateCheck = 1320;
 				LastUpgradeCheck = 1400;
-				ORGANIZATIONNAME = "Mahdi Bchatnia";
+				ORGANIZATIONNAME = "";
 				TargetAttributes = {
 					B212510B20CD123800F36050 = {
 						CreatedOnToolsVersion = 10.0;
@@ -409,8 +409,8 @@
 					};
 				};
 			};
-			buildConfigurationList = B2C2291A1EF223C40015AB33 /* Build configuration list for PBXProject "MacSymbolicator" */;
-			compatibilityVersion = "Xcode 8.0";
+			buildConfigurationList = B2C2291A1EF223C40015AB33 /* Build configuration list for PBXProject "Symbo" */;
+			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -425,9 +425,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B2C2291E1EF223C50015AB33 /* MacSymbolicator */,
-				B212510B20CD123800F36050 /* MacSymbolicatorTests */,
-				B21EFA54289A981400CA69B1 /* MacSymbolicatorCLI */,
+				B2C2291E1EF223C50015AB33 /* Symbo */,
+				B212510B20CD123800F36050 /* SymboTests */,
+				B21EFA54289A981400CA69B1 /* SymboCLI */,
 			);
 		};
 /* End PBXProject section */
@@ -548,12 +548,12 @@
 /* Begin PBXTargetDependency section */
 		B212511220CD123900F36050 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = B2C2291E1EF223C50015AB33 /* MacSymbolicator */;
+			target = B2C2291E1EF223C50015AB33 /* Symbo */;
 			targetProxy = B212511120CD123900F36050 /* PBXContainerItemProxy */;
 		};
 		B2C2ED8E289AC0A500B7FA40 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = B21EFA54289A981400CA69B1 /* MacSymbolicatorCLI */;
+			target = B21EFA54289A981400CA69B1 /* SymboCLI */;
 			targetProxy = B2C2ED8D289AC0A500B7FA40 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -580,7 +580,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = PP5UYHJQCD;
+				DEVELOPMENT_TEAM = 546K4L25BJ;
 				INFOPLIST_FILE = MacSymbolicatorTests/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -589,10 +589,10 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				PRODUCT_BUNDLE_IDENTIFIER = jp.mahdi.MacSymbolicatorTests;
+				PRODUCT_BUNDLE_IDENTIFIER = ua.mykyta.symboTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacSymbolicator.app/Contents/MacOS/MacSymbolicator";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Symbo.app/Contents/MacOS/Symbo";
 			};
 			name = Debug;
 		};
@@ -606,7 +606,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = PP5UYHJQCD;
+				DEVELOPMENT_TEAM = 546K4L25BJ;
 				INFOPLIST_FILE = MacSymbolicatorTests/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -614,10 +614,10 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				PRODUCT_BUNDLE_IDENTIFIER = jp.mahdi.MacSymbolicatorTests;
+				PRODUCT_BUNDLE_IDENTIFIER = ua.mykyta.symboTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacSymbolicator.app/Contents/MacOS/MacSymbolicator";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Symbo.app/Contents/MacOS/Symbo";
 			};
 			name = Release;
 		};
@@ -630,11 +630,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = PP5UYHJQCD;
+				DEVELOPMENT_TEAM = 546K4L25BJ;
 				ENABLE_HARDENED_RUNTIME = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = ua.mykyta.symboCLI;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -650,10 +651,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = PP5UYHJQCD;
+				DEVELOPMENT_TEAM = 546K4L25BJ;
 				ENABLE_HARDENED_RUNTIME = YES;
 				MACOSX_DEPLOYMENT_TARGET = 12.1;
 				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = ua.mykyta.symboCLI;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -784,7 +786,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 8;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = PP5UYHJQCD;
+				DEVELOPMENT_TEAM = 546K4L25BJ;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -792,7 +794,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 2.6;
-				PRODUCT_BUNDLE_IDENTIFIER = jp.mahdi.MacSymbolicator;
+				PRODUCT_BUNDLE_IDENTIFIER = ua.mykyta.symbo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
@@ -810,7 +812,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 8;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = PP5UYHJQCD;
+				DEVELOPMENT_TEAM = 546K4L25BJ;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -818,7 +820,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 2.6;
-				PRODUCT_BUNDLE_IDENTIFIER = jp.mahdi.MacSymbolicator;
+				PRODUCT_BUNDLE_IDENTIFIER = ua.mykyta.symbo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
@@ -828,7 +830,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		B212511320CD123900F36050 /* Build configuration list for PBXNativeTarget "MacSymbolicatorTests" */ = {
+		B212511320CD123900F36050 /* Build configuration list for PBXNativeTarget "SymboTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B212511420CD123900F36050 /* Debug */,
@@ -837,7 +839,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B21EFA5B289A981400CA69B1 /* Build configuration list for PBXNativeTarget "MacSymbolicatorCLI" */ = {
+		B21EFA5B289A981400CA69B1 /* Build configuration list for PBXNativeTarget "SymboCLI" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B21EFA59289A981400CA69B1 /* Debug */,
@@ -846,7 +848,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B2C2291A1EF223C40015AB33 /* Build configuration list for PBXProject "MacSymbolicator" */ = {
+		B2C2291A1EF223C40015AB33 /* Build configuration list for PBXProject "Symbo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B2C2292D1EF223C50015AB33 /* Debug */,
@@ -855,7 +857,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B2C2292F1EF223C50015AB33 /* Build configuration list for PBXNativeTarget "MacSymbolicator" */ = {
+		B2C2292F1EF223C50015AB33 /* Build configuration list for PBXNativeTarget "Symbo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B2C229301EF223C50015AB33 /* Debug */,

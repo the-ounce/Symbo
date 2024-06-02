@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B21EFA54289A981400CA69B1"
-               BuildableName = "MacSymbolicatorCLI"
-               BlueprintName = "MacSymbolicatorCLI"
-               ReferencedContainer = "container:MacSymbolicator.xcodeproj">
+               BuildableName = "SymboCLI"
+               BlueprintName = "SymboCLI"
+               ReferencedContainer = "container:Symbo.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B21EFA54289A981400CA69B1"
-            BuildableName = "MacSymbolicatorCLI"
-            BlueprintName = "MacSymbolicatorCLI"
-            ReferencedContainer = "container:MacSymbolicator.xcodeproj">
+            BuildableName = "SymboCLI"
+            BlueprintName = "SymboCLI"
+            ReferencedContainer = "container:Symbo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B21EFA54289A981400CA69B1"
-            BuildableName = "MacSymbolicatorCLI"
-            BlueprintName = "MacSymbolicatorCLI"
-            ReferencedContainer = "container:MacSymbolicator.xcodeproj">
+            BuildableName = "SymboCLI"
+            BlueprintName = "SymboCLI"
+            ReferencedContainer = "container:Symbo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
