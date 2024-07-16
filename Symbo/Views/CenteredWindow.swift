@@ -18,9 +18,24 @@ class CenteredWindow: NSWindow {
         let windowRect = CGRect(origin: windowOrigin, size: windowSize)
 
         super.init(contentRect: windowRect,
-                   styleMask: [.unifiedTitleAndToolbar, .titled, .closable],
+                   styleMask: [.fullSizeContentView, .titled, .closable, .borderless],
                    backing: .buffered,
                    defer: false)
+
+        // Vibrancy effect
+        let visualEffectView = NSVisualEffectView()
+        visualEffectView.blendingMode = .behindWindow
+        visualEffectView.state = .active
+        visualEffectView.material = .windowBackground
+        visualEffectView.frame = contentView!.bounds
+        visualEffectView.autoresizingMask = [.width, .height]
+        contentView!.addSubview(visualEffectView, positioned: .below, relativeTo: nil)
+
+        titlebarAppearsTransparent = true
+        titleVisibility = .hidden
+        backgroundColor = .clear
+        isMovableByWindowBackground = true
+        isOpaque = false
     }
 
     override func close() {

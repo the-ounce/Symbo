@@ -9,15 +9,15 @@ class InputCoordinator {
     let reportFileDropZone = DropZone(
         fileTypes: [".crash", ".ips", ".txt"],
         allowsMultipleFiles: false,
-        text: "Drop Report File\n(crash, sample, or spindump)",
+        text: "",
         activatesAppAfterDrop: true
     )
 
     let dsymFilesDropZone = DropZone(
         fileTypes: [".dSYM"],
         allowsMultipleFiles: true,
-        text: "Drop App DSYMs",
-        detailText: "(if not found automatically)",
+        text: "",
+        detailText: "",
         activatesAppAfterDrop: true
     )
 
@@ -108,9 +108,9 @@ class InputCoordinator {
         case 0:
             reportFileDropZone.detailText = "(Symbolication not needed)"
         case 1:
-            reportFileDropZone.detailText = "(1 DSYM necessary)"
+            reportFileDropZone.detailText = "(1 dSYM required)"
         default:
-            reportFileDropZone.detailText = "(\(expectedCount) DSYMs necessary)"
+            reportFileDropZone.detailText = "(\(expectedCount) dSYMs required)"
         }
     }
 

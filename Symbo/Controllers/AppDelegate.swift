@@ -19,6 +19,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if let window = sender.windows.first {
+            window.makeKeyAndOrderFront(self)
+        }
+        return true
+    }
+
     func application(_ sender: NSApplication, openFile filename: String) -> Bool {
         mainController.openFile(filename)
     }
