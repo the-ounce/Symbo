@@ -9,18 +9,18 @@ public class ReportProcess {
     let name: String?
     private(set) var architecture: Architecture?
     let binaryImages: [BinaryImage]
-    let frames: [StackFrame]
+    let stackFrames: [StackFrame]
 
     private static let processSectionRegex = #"^(Process:.*?)(?=\z|^Process:)"#
     private static let processNameRegex = #"^Process:\s*(.+?)\s*\["#
 
     lazy var binariesForSymbolication: [BinaryImage] = {
-        let uuids = frames.map { $0.binaryImage }
-        return Array(Set<BinaryImage>(uuids))
+        let images = stackFrames.map { $0.binaryImage }
+        return Array(Set<BinaryImage>(images))
     }()
 
     lazy var uuidsForSymbolication: [BinaryUUID] = {
-        let uuids = frames.map { $0.binaryImage.uuid }
+        let uuids = stackFrames.map { $0.binaryImage.uuid }
         return Array(Set<BinaryUUID>(uuids))
     }()
 
@@ -40,9 +40,6 @@ public class ReportProcess {
         name = content.scan(pattern: Self.processNameRegex).first?.first
         architecture = Architecture.find(in: content)
         binaryImages = BinaryImage.find(in: content)
-        frames = StackFrame.find(
-            in: content,
-            binaryImageMap: BinaryImageMap(binaryImages: binaryImages)
-        )
+        stackFrames = StackFrame.find(in: content, binaryImageMap: BinaryImageMap(binaryImages: binaryImages))
     }
 }

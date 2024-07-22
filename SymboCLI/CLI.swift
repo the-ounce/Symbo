@@ -63,7 +63,7 @@ struct MacSymbolicatorCLI: ParsableCommand {
             print("Report: \(reportFile.path.path) [\(reportUUIDs)]")
 
             let dsymDescriptions: [String] = dsymFiles.map {
-                let uuids = $0.uuids.map { "    \($0.key): \($0.value.pretty)" }
+                let uuids = $0.uuids.map { "    \($0.key): \($0.key.pretty)" }
 
                 return "DSYM file: \($0.binaryPath)\n\(uuids.joined(separator: "\n"))"
             }

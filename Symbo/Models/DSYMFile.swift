@@ -8,7 +8,7 @@ import Foundation
 public struct DSYMFile: Equatable {
     let path: URL
     let filename: String
-    let uuids: [Architecture: BinaryUUID]
+    let uuids: [BinaryUUID: String]
 
     var binaryPath: String {
         let dwarfPath = path.appendingPathComponent("Contents")
@@ -47,16 +47,17 @@ public struct DSYMFile: Equatable {
             return nil
         }
 
-        var uuids = [Architecture: BinaryUUID]()
+        var uuids = [BinaryUUID: String]()
 
         output?.components(separatedBy: .newlines).forEach { line in
             guard
-                let match = line.scan(pattern: #"UUID: (.*?) \((.*?)\)"#).first, match.count == 2,
-                let uuid = match.first.flatMap(BinaryUUID.init),
-                let architecture = match.last.flatMap(Architecture.init)
+                let match = line.scan(pattern: #"UUID: (.*?) \((.*?)\) (.*)"#).first,
+                match.count == 3,
+                let uuid = BinaryUUID(match[0])
             else { return }
 
-            uuids[architecture] = uuid
+            let binaryName = match[2]
+            uuids[uuid] = binaryName
         }
 
         self.uuids = uuids

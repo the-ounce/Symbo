@@ -35,7 +35,7 @@ class InputCoordinator {
     }
 
     private var foundDSYMUUIDs: Set<String> {
-        let addedDSYMUUIDs = dsymFiles.flatMap { $0.uuids.values }.map { $0.pretty }
+        let addedDSYMUUIDs = dsymFiles.flatMap { $0.uuids.keys }.map { $0.pretty }
         return expectedDSYMUUIDs.intersection(addedDSYMUUIDs)
     }
 
