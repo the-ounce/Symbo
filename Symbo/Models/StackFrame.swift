@@ -3,7 +3,7 @@
 //  MacSymbolicator
 //
 
-import Foundation
+import AppKit
 
 class StackFrame {
     private enum Parsing {
@@ -40,17 +40,28 @@ class StackFrame {
         self.binaryImage = binaryImage
     }
 
-    func symbolicateLine(with symbolicatedAddress: String) -> String {
+    func symbolicateLine(with symbolicatedAddress: String) -> NSAttributedString {
         let newLine = originalLine.replacingOccurrences(of: binaryImage.loadAddress, with: symbolicatedAddress)
 
         let marker = ">>>> "
         let spacesBeforeAddress = String(repeating: " ", count: 5)
 
+        var resultString: String
         if let range = newLine.range(of: spacesBeforeAddress + cryptedAddress) {
-            return newLine.replacingCharacters(in: range, with: marker + cryptedAddress)
+            resultString = newLine.replacingCharacters(in: range, with: marker + cryptedAddress)
         } else {
-            return newLine.replacingOccurrences(of: cryptedAddress, with: marker + cryptedAddress)
+            resultString = newLine.replacingOccurrences(of: cryptedAddress, with: marker + cryptedAddress)
         }
+
+        let attributedString = NSMutableAttributedString(string: resultString)
+
+        // Color the process name
+        if let processNameRange = resultString.range(of: binaryImage.name) {
+            let nsRange = NSRange(processNameRange, in: resultString)
+            attributedString.addAttribute(.foregroundColor, value: NSColor.systemOrange, range: nsRange)
+        }
+
+        return attributedString
     }
 
     static func find(in content: String, binaryImageMap: BinaryImageMap) -> [StackFrame] {

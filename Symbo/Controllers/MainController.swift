@@ -24,15 +24,26 @@ class MainController {
 
     private var isSymbolicating: Bool = false {
         didSet {
-            symbolicateButton.isEnabled = !isSymbolicating
+            updateSymbolicateButtonState()
             symbolicateButton.title = isSymbolicating ? "Symbolicating…" : "Symbolicate"
         }
+    }
+
+    private var isReportFileAvailable: Bool = false {
+        didSet {
+            updateSymbolicateButtonState()
+        }
+    }
+
+    private func updateSymbolicateButtonState() {
+        symbolicateButton.isEnabled = isReportFileAvailable && !isSymbolicating
     }
 
     private let logController: ViewableLogController = DefaultViewableLogController()
 
     init() {
         logController.delegate = self
+        inputCoordinator.delegate = self
 
         let reportFileDropZone = inputCoordinator.reportFileDropZone
         let dsymFilesDropZone = inputCoordinator.dsymFilesDropZone
@@ -58,6 +69,7 @@ class MainController {
         symbolicateButton.setButtonType(.momentaryPushIn)
         symbolicateButton.target = self
         symbolicateButton.action = #selector(MainController.symbolicate)
+        symbolicateButton.isEnabled = false
 
         viewLogsButton.title = "View Logs…"
         viewLogsButton.bezelStyle = .regularSquare
@@ -182,7 +194,7 @@ class MainController {
 
             DispatchQueue.main.async {
                 if success {
-                    self.textWindowController.text = symbolicator.symbolicatedContent ?? ""
+                    self.textWindowController.attributedText = symbolicator.symbolicatedContent ?? NSAttributedString(string: "")
                     self.textWindowController.defaultSaveURL = reportFile.symbolicatedContentSaveURL
                     self.textWindowController.showWindow()
                 } else {
@@ -242,5 +254,11 @@ extension MainController: LogControllerDelegate {
         DispatchQueue.main.async {
             self.viewLogsButton.isHidden = logMessages.isEmpty
         }
+    }
+}
+
+extension MainController: InputCoordinatorDelegate {
+    func inputCoordinator(_ coordinator: InputCoordinator, didReceiveReportFile: Bool) {
+        isReportFileAvailable = didReceiveReportFile
     }
 }

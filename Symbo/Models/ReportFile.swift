@@ -27,7 +27,7 @@ public class ReportFile {
     var symbolicatedContentSaveURL: URL {
         let directory = path.deletingLastPathComponent()
         let originalFilename = path.lastPathComponent
-        let newFilename = "[S] " + (originalFilename as NSString).deletingPathExtension + ".txt"
+        let newFilename = "[S] " + (originalFilename as NSString).deletingPathExtension + ".crash"
         return directory.appendingPathComponent(newFilename)
     }
 

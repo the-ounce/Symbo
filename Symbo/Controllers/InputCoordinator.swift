@@ -5,7 +5,13 @@
 
 import Foundation
 
+protocol InputCoordinatorDelegate: AnyObject {
+    func inputCoordinator(_ coordinator: InputCoordinator, didReceiveReportFile: Bool)
+}
+
 class InputCoordinator {
+    weak var delegate: InputCoordinatorDelegate?
+
     let reportFileDropZone = DropZone(
         fileTypes: [".crash", ".ips", ".txt"],
         allowsMultipleFiles: false,
@@ -182,6 +188,8 @@ extension InputCoordinator: DropZoneDelegate {
             if reportFile != nil {
                 startSearchForDSYMs()
             }
+
+            delegate?.inputCoordinator(self, didReceiveReportFile: reportFile != nil)
 
             return fileURLs
         } else if dropZone == dsymFilesDropZone {

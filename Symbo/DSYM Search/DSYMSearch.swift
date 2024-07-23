@@ -32,7 +32,7 @@ class DSYMSearch {
     ) {
         let searchGroup = DispatchGroup()
         let searchQueue = DispatchQueue(label: "com.macsymbolicator.dsymsearch", attributes: .concurrent)
-        
+
         var results: [SearchLocation: [SearchResult]] = [:]
         var errors: [SearchLocation: Error] = [:]
 
@@ -53,13 +53,13 @@ class DSYMSearch {
                     } else if let locationResults = locationResults {
                         results[location] = locationResults
                     }
-                    
+
                     searchQueue.async {
                         completedLocations += 1
                         let progress = Float(completedLocations) / Float(totalLocations)
                         progressHandler(progress)
                     }
-                    
+
                     searchGroup.leave()
                 }
             }
@@ -71,12 +71,12 @@ class DSYMSearch {
             logHandler("DSYMSearch timed out after \(Int(timeoutSeconds)) seconds.")
             searchGroup.leave() // Force the group to finish
         }
-        
+
         DispatchQueue.global().asyncAfter(deadline: .now() + timeoutSeconds, execute: timeoutWorkItem)
 
         searchGroup.notify(queue: .main) {
             timeoutWorkItem.cancel() // Cancel the timeout if all searches complete in time
-            
+
             let allResults = results.values.flatMap { $0 }
             let allErrors = errors.values
 
@@ -134,7 +134,7 @@ class DSYMSearch {
             .in(directory: directory)
             .with(logHandler: logHandler)
             .search(fileExtension: "dsym").sorted().matching(uuids: uuids)
-        
+
         logHandler("Non-recursive search completed. Found \(results.count) results.")
         completion(results, nil)
     }
@@ -151,7 +151,7 @@ class DSYMSearch {
             .in(directory: searchDirectory)
             .with(logHandler: logHandler)
             .search(fileExtension: "dsym").sorted().matching(uuids: uuids)
-        
+
         logHandler("Recursive search completed. Found \(results.count) results.")
         completion(results, nil)
     }

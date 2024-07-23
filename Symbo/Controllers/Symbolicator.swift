@@ -9,7 +9,7 @@ struct Symbolicator {
     let reportFile: ReportFile
     let dsymFiles: [DSYMFile]
 
-    var symbolicatedContent: String?
+    var symbolicatedContent: NSAttributedString?
     var logController: LogController
 
     init(reportFile: ReportFile, dsymFiles: [DSYMFile], logController: LogController) {
@@ -80,7 +80,7 @@ struct Symbolicator {
         // Log any missing dSYM files
         let missingDSYMs = process.binaryImages.filter { dsymsByLoadAddress[$0.loadAddress] == nil }
         for missingBinary in missingDSYMs {
-            logController.addLogMessage("Missing dSYM for binary: \(missingBinary.name) (UUID: \(missingBinary.uuid.pretty))")
+            logController.addLogMessage("Missing dSYM for binary: \(missingBinary.name), \(missingBinary.uuid.pretty)")
         }
 
         guard !dsymsByLoadAddress.isEmpty else {
@@ -129,15 +129,23 @@ struct Symbolicator {
     }
 
     private mutating func updateSymbolicatedContent() {
-        var updatedContent = reportFile.content
+        let mutableAttributedString = NSMutableAttributedString(string: reportFile.content)
+        var offset = 0
+
         reportFile.processes.forEach { process in
             process.stackFrames.forEach { frame in
-                if let symbolicatedAddress = frame.symbolicatedAddress {
+                if let symbolicatedAddress = frame.symbolicatedAddress,
+                   let range = reportFile.content.range(of: frame.originalLine) {
                     let symbolicatedLine = frame.symbolicateLine(with: symbolicatedAddress)
-                    updatedContent = updatedContent.replacingOccurrences(of: frame.originalLine, with: symbolicatedLine)
+                    let nsRange = NSRange(range, in: reportFile.content)
+                    let adjustedRange = NSRange(location: nsRange.location + offset, length: nsRange.length)
+
+                    mutableAttributedString.replaceCharacters(in: adjustedRange, with: symbolicatedLine)
+                    offset += symbolicatedLine.length - nsRange.length
                 }
             }
         }
-        symbolicatedContent = updatedContent
+
+        symbolicatedContent = mutableAttributedString
     }
 }

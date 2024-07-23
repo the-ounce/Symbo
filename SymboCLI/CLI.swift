@@ -90,7 +90,7 @@ struct MacSymbolicatorCLI: ParsableCommand {
             }
 
             if let output = output, let symbolicatedContent = symbolicator.symbolicatedContent {
-                try symbolicatedContent.write(toFile: output, atomically: false, encoding: .utf8)
+                try symbolicatedContent.string.write(toFile: output, atomically: false, encoding: .utf8)
             } else {
                 let fallbackOutput = verbose ? "No symbolicated content" : ""
                 print(symbolicator.symbolicatedContent ?? fallbackOutput)
