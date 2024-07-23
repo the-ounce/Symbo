@@ -96,90 +96,90 @@ class MainController {
         statusView.addSubview(statusTextField)
         statusView.addSubview(symbolicateButton)
         statusView.addSubview(viewLogsButton)
-        
+
         statusView.translatesAutoresizingMaskIntoConstraints = false
         statusTextField.translatesAutoresizingMaskIntoConstraints = false
         symbolicateButton.translatesAutoresizingMaskIntoConstraints = false
         viewLogsButton.translatesAutoresizingMaskIntoConstraints = false
-        
+
         NSLayoutConstraint.activate([
             contentView.heightAnchor.constraint(equalToConstant: 400),
             contentView.widthAnchor.constraint(equalToConstant: 800),
-            
+
             titlebarView.topAnchor.constraint(equalTo: contentView.topAnchor),
             titlebarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             titlebarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             titlebarView.heightAnchor.constraint(equalToConstant: 30),
-            
+
             titleLabel.centerXAnchor.constraint(equalTo: titlebarView.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: titlebarView.centerYAnchor),
-            
+
             dropZonesStackView.topAnchor.constraint(equalTo: titlebarView.topAnchor, constant: 25),
             dropZonesStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 5),
             dropZonesStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -5),
             dropZonesStackView.bottomAnchor.constraint(equalTo: statusView.topAnchor),
-            
+
             reportFileDropZone.topAnchor.constraint(equalTo: reportFileDropZoneContainer.topAnchor),
             reportFileDropZone.leadingAnchor.constraint(equalTo: reportFileDropZoneContainer.leadingAnchor),
             reportFileDropZone.trailingAnchor.constraint(equalTo: reportFileDropZoneContainer.trailingAnchor),
             reportFileDropZone.bottomAnchor.constraint(equalTo: reportFileDropZoneContainer.bottomAnchor),
-            
+
             dsymFilesDropZone.topAnchor.constraint(equalTo: dsymFilesDropZoneContainer.topAnchor),
             dsymFilesDropZone.leadingAnchor.constraint(equalTo: dsymFilesDropZoneContainer.leadingAnchor),
             dsymFilesDropZone.trailingAnchor.constraint(equalTo: dsymFilesDropZoneContainer.trailingAnchor),
             dsymFilesDropZone.bottomAnchor.constraint(equalTo: dsymFilesDropZoneContainer.bottomAnchor),
-            
+
             statusView.topAnchor.constraint(equalTo: dropZonesStackView.bottomAnchor),
             statusView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             statusView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             statusView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             statusView.heightAnchor.constraint(equalToConstant: 50),
-            
+
             statusTextField.leadingAnchor.constraint(equalTo: statusView.leadingAnchor, constant: 20),
             statusTextField.centerYAnchor.constraint(equalTo: statusView.centerYAnchor),
             statusTextField.widthAnchor.constraint(equalToConstant: 120),
-            
+
             symbolicateButton.centerXAnchor.constraint(equalTo: statusView.centerXAnchor),
             symbolicateButton.centerYAnchor.constraint(equalTo: statusView.centerYAnchor),
             symbolicateButton.widthAnchor.constraint(equalToConstant: 120),
             symbolicateButton.heightAnchor.constraint(equalToConstant: 30),
-            
+
             viewLogsButton.trailingAnchor.constraint(equalTo: statusView.trailingAnchor, constant: -20),
             viewLogsButton.centerYAnchor.constraint(equalTo: statusView.centerYAnchor),
             viewLogsButton.widthAnchor.constraint(equalToConstant: 120),
             viewLogsButton.heightAnchor.constraint(equalToConstant: 20)
         ])
-        
+
         mainWindow.makeKeyAndOrderFront(nil)
-    } 
-    
+    }
+
     @objc func symbolicate() {
         guard !isSymbolicating else { return }
-        
+
         guard let reportFile = inputCoordinator.reportFile else {
             inputCoordinator.reportFileDropZone.flash()
             return
         }
-        
+
         guard !inputCoordinator.dsymFiles.isEmpty else {
             inputCoordinator.dsymFilesDropZone.flash()
             return
         }
-        
+
         logController.resetLogs()
-        
+
         isSymbolicating = true
-        
+
         let dsymFiles = inputCoordinator.dsymFiles
         var symbolicator = Symbolicator(
             reportFile: reportFile,
             dsymFiles: dsymFiles,
             logController: logController
         )
-        
+
         DispatchQueue.global(qos: .userInitiated).async {
             let success = symbolicator.symbolicate()
-            
+
             DispatchQueue.main.async {
                 if success {
                     self.textWindowController.text = symbolicator.symbolicatedContent ?? ""
@@ -189,39 +189,39 @@ class MainController {
                     let alert = NSAlert()
                     alert.informativeText = "Symbolication failed. See logs for more info."
                     alert.alertStyle = .critical
-                    
+
                     alert.addButton(withTitle: "OK")
                     alert.addButton(withTitle: "View Logs…")
-                    
+
                     if alert.runModal() == .alertSecondButtonReturn {
                         self.logController.viewLogs()
                     }
                 }
-                
+
                 self.isSymbolicating = false
             }
         }
     }
-    
+
     func openFile(_ path: String) -> Bool {
         let fileURL = URL(fileURLWithPath: path)
         return inputCoordinator.acceptReportFile(url: fileURL) || inputCoordinator.acceptDSYMFile(url: fileURL)
     }
-    
+
     func suggestUpdate(version: String, url: URL) {
         availableUpdateURL = url
-        
+
         let updateButton = self.updateButton ?? NSButton()
         updateButton.title = "Update available: \(version)"
         updateButton.controlSize = .small
         updateButton.bezelStyle = .roundRect
         updateButton.target = self
         updateButton.action = #selector(self.tappedUpdateButton(_:))
-        
+
         guard let frameView = mainWindow.contentView?.superview else {
             return
         }
-        
+
         frameView.addSubview(updateButton)
         updateButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -229,7 +229,7 @@ class MainController {
             updateButton.topAnchor.constraint(equalTo: frameView.topAnchor, constant: 6)
         ])
     }
-    
+
     @objc
     private func tappedUpdateButton(_ sender: AnyObject?) {
         guard let availableUpdateURL = availableUpdateURL else { return }

@@ -41,7 +41,16 @@ class StackFrame {
     }
 
     func symbolicateLine(with symbolicatedAddress: String) -> String {
-        return originalLine.replacingOccurrences(of: cryptedAddress, with: symbolicatedAddress)
+        let newLine = originalLine.replacingOccurrences(of: binaryImage.loadAddress, with: symbolicatedAddress)
+
+        let marker = ">>>> "
+        let spacesBeforeAddress = String(repeating: " ", count: 5)
+
+        if let range = newLine.range(of: spacesBeforeAddress + cryptedAddress) {
+            return newLine.replacingCharacters(in: range, with: marker + cryptedAddress)
+        } else {
+            return newLine.replacingOccurrences(of: cryptedAddress, with: marker + cryptedAddress)
+        }
     }
 
     static func find(in content: String, binaryImageMap: BinaryImageMap) -> [StackFrame] {

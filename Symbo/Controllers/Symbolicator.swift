@@ -74,7 +74,6 @@ struct Symbolicator {
         for binaryImage in process.binaryImages {
             if let dsymFile = dsymsByUUID[binaryImage.uuid] {
                 dsymsByLoadAddress[binaryImage.loadAddress] = dsymFile
-                print(dsymFiles)
             }
         }
 

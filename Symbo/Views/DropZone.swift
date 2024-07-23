@@ -55,7 +55,7 @@ class DropZone: NSView {
                     return "." + fileType.lowercased()
                 }
             }
-            
+
             // Generate the file types without the leading dot
             fileTypesWithoutDot = _fileTypes.map { String($0.dropFirst()) }
         }
@@ -214,7 +214,7 @@ class DropZone: NSView {
 
             tableViewScrollView.isHidden = true
         }
-        
+
         if allowsMultipleFiles {
             addSubview(tableViewScrollView)
 
@@ -227,7 +227,7 @@ class DropZone: NSView {
 
             tableViewScrollView.isHidden = true
         }
-        
+
         let clickGestureRecognizer = NSClickGestureRecognizer(target: self, action: #selector(dropZoneClicked))
         clickGestureRecognizer.isEnabled = !allowsMultipleFiles || tableViewScrollView.isHidden
         addGestureRecognizer(clickGestureRecognizer)
@@ -243,18 +243,18 @@ class DropZone: NSView {
                 containerView.topAnchor.constraint(equalTo: topAnchor),
                 containerView.heightAnchor.constraint(equalToConstant: 60),
                 containerView.widthAnchor.constraint(equalTo: widthAnchor),
-                
+
                 iconImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
                 iconImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
                 iconImageView.heightAnchor.constraint(equalToConstant: 32),
                 iconImageView.widthAnchor.constraint(equalToConstant: 32),
-                
+
                 textContainerStackView.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 10),
                 textContainerStackView.topAnchor.constraint(equalTo: iconImageView.topAnchor),
                 textContainerStackView.bottomAnchor.constraint(equalTo: iconImageView.bottomAnchor),
                 textContainerStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12)
             ]
-            
+
             textContainerStackView.spacing = 0
             textContainerStackView.alignment = .leading
             NSLayoutConstraint.activate(layoutConstraints)
@@ -264,17 +264,17 @@ class DropZone: NSView {
                 containerView.bottomAnchor.constraint(equalTo: bottomAnchor),
                 containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
                 containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
-                
+
                 iconImageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
                 iconImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor, constant: -20),
                 iconImageView.heightAnchor.constraint(equalToConstant: 64),
                 iconImageView.widthAnchor.constraint(equalToConstant: 64),
-                
+
                 textContainerStackView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
                 textContainerStackView.topAnchor.constraint(equalTo: iconImageView.bottomAnchor, constant: 8),
                 textContainerStackView.widthAnchor.constraint(equalTo: containerView.widthAnchor)
             ]
-            
+
             textContainerStackView.spacing = 8
             textContainerStackView.alignment = .centerX
             NSLayoutConstraint.activate(layoutConstraints)
@@ -460,7 +460,7 @@ class DropZone: NSView {
             self.display()
         }
     }
-    
+
     override func resetCursorRects() {
         addCursorRect(bounds, cursor: .pointingHand)
     }

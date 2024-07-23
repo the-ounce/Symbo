@@ -63,7 +63,7 @@ public class ReportFile {
         if !content.hasPrefix("{") {
             return content
         }
-        
+
         // If it's in IPS format, convert to TXT
         return try Translator.translatedCrash(forIPSAt: path)
     }
