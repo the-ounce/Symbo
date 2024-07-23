@@ -5,19 +5,25 @@
 
 import Foundation
 
+protocol InputCoordinatorDelegate: AnyObject {
+    func inputCoordinator(_ coordinator: InputCoordinator, didReceiveReportFile: Bool)
+}
+
 class InputCoordinator {
+    weak var delegate: InputCoordinatorDelegate?
+
     let reportFileDropZone = DropZone(
         fileTypes: [".crash", ".ips", ".txt"],
         allowsMultipleFiles: false,
-        text: "Drop Report File\n(crash, sample, or spindump)",
+        text: "",
         activatesAppAfterDrop: true
     )
 
     let dsymFilesDropZone = DropZone(
         fileTypes: [".dSYM"],
         allowsMultipleFiles: true,
-        text: "Drop App DSYMs",
-        detailText: "(if not found automatically)",
+        text: "",
+        detailText: "",
         activatesAppAfterDrop: true
     )
 
@@ -35,7 +41,7 @@ class InputCoordinator {
     }
 
     private var foundDSYMUUIDs: Set<String> {
-        let addedDSYMUUIDs = dsymFiles.flatMap { $0.uuids.values }.map { $0.pretty }
+        let addedDSYMUUIDs = dsymFiles.flatMap { $0.uuids.keys }.map { $0.pretty }
         return expectedDSYMUUIDs.intersection(addedDSYMUUIDs)
     }
 
@@ -70,12 +76,28 @@ class InputCoordinator {
         isSearchingForDSYMs = true
         updateDSYMDetailText()
 
+        let searchTimeout: TimeInterval = 300 // 5 minutes timeout
+        let searchWorkItem = DispatchWorkItem { [weak self] in
+            self?.isSearchingForDSYMs = false
+            self?.updateDSYMDetailText()
+            self?.logController.addLogMessage("dSYM search timed out after \(Int(searchTimeout)) seconds.")
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + searchTimeout, execute: searchWorkItem)
+
         DSYMSearch.search(
             forUUIDs: remainingUUIDs,
             reportFileDirectory: reportFile.path.deletingLastPathComponent().path,
             logHandler: logController.addLogMessage,
+            progressHandler: { [weak self] progress in
+                DispatchQueue.main.async {
+                    self?.updateSearchProgress(progress)
+                }
+            },
             callback: { [weak self] finished, results in
                 DispatchQueue.main.async {
+                    searchWorkItem.cancel()
+
                     results?.forEach { dsymResult in
                         let dsymURL = URL(fileURLWithPath: dsymResult.path)
                         self?.dsymFilesDropZone.acceptFile(url: dsymURL)
@@ -89,6 +111,13 @@ class InputCoordinator {
                 }
             }
         )
+    }
+
+    func updateSearchProgress(_ progress: Float) {
+        // Update UI to show search progress
+        // For example, update a progress bar or show percentage in the detail text
+        let percentage = Int(progress * 100)
+        dsymFilesDropZone.detailText = "Searching... \(percentage)%"
     }
 
     func updateCrashDetailText() {
@@ -108,9 +137,9 @@ class InputCoordinator {
         case 0:
             reportFileDropZone.detailText = "(Symbolication not needed)"
         case 1:
-            reportFileDropZone.detailText = "(1 DSYM necessary)"
+            reportFileDropZone.detailText = "(1 dSYM required)"
         default:
-            reportFileDropZone.detailText = "(\(expectedCount) DSYMs necessary)"
+            reportFileDropZone.detailText = "(\(expectedCount) dSYMs required)"
         }
     }
 
@@ -159,6 +188,8 @@ extension InputCoordinator: DropZoneDelegate {
             if reportFile != nil {
                 startSearchForDSYMs()
             }
+
+            delegate?.inputCoordinator(self, didReceiveReportFile: reportFile != nil)
 
             return fileURLs
         } else if dropZone == dsymFilesDropZone {

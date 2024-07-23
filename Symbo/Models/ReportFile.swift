@@ -25,13 +25,10 @@ public class ReportFile {
     var symbolicatedContent: String?
 
     var symbolicatedContentSaveURL: URL {
-        let originalPathExtension = path.pathExtension
-        let extensionLessPath = path.deletingPathExtension()
-        let newFilename = extensionLessPath.lastPathComponent.appending("_symbolicated")
-        return extensionLessPath
-            .deletingLastPathComponent()
-            .appendingPathComponent(newFilename)
-            .appendingPathExtension(originalPathExtension)
+        let directory = path.deletingLastPathComponent()
+        let originalFilename = path.lastPathComponent
+        let newFilename = "[S] " + (originalFilename as NSString).deletingPathExtension + ".crash"
+        return directory.appendingPathComponent(newFilename)
     }
 
     public init(path: URL) throws {
@@ -47,30 +44,27 @@ public class ReportFile {
             throw InitializationError.emptyFile
         }
 
-        var processes = ReportProcess.find(in: originalContent)
-
-        if processes.isEmpty && originalContent.hasPrefix("{") {
-            // Could not find any processes defined in the report file -> Probably not the usual crash report format
-            // However, the contents might be JSON -> It might be the new .ips format
-            // Attempt translation to the old crash format
-
-            do {
-                content = try Translator.translatedCrash(forIPSAt: path)
-            } catch {
-                if let translationError = error as? Translator.Error {
-                    throw InitializationError.translation(translationError)
-                } else {
-                    throw InitializationError.other(error)
-                }
-            }
-
-            processes = ReportProcess.find(in: content)
-        } else {
-            self.content = originalContent
-        }
-
         self.path = path
         self.filename = path.lastPathComponent
-        self.processes = processes
+
+        // Convert to TXT format
+        do {
+            self.content = try Self.convertToTXTFormat(originalContent, path: path)
+        } catch {
+            throw InitializationError.translation(error as? Translator.Error ?? .unexpectedOutput)
+        }
+
+        // Initialize processes after content is set
+        self.processes = ReportProcess.find(in: self.content)
+    }
+
+    private static func convertToTXTFormat(_ content: String, path: URL) throws -> String {
+        // If it's already in TXT format, return as is
+        if !content.hasPrefix("{") {
+            return content
+        }
+
+        // If it's in IPS format, convert to TXT
+        return try Translator.translatedCrash(forIPSAt: path)
     }
 }

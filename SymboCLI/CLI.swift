@@ -63,7 +63,7 @@ struct MacSymbolicatorCLI: ParsableCommand {
             print("Report: \(reportFile.path.path) [\(reportUUIDs)]")
 
             let dsymDescriptions: [String] = dsymFiles.map {
-                let uuids = $0.uuids.map { "    \($0.key): \($0.value.pretty)" }
+                let uuids = $0.uuids.map { "    \($0.key): \($0.key.pretty)" }
 
                 return "DSYM file: \($0.binaryPath)\n\(uuids.joined(separator: "\n"))"
             }
@@ -90,7 +90,7 @@ struct MacSymbolicatorCLI: ParsableCommand {
             }
 
             if let output = output, let symbolicatedContent = symbolicator.symbolicatedContent {
-                try symbolicatedContent.write(toFile: output, atomically: false, encoding: .utf8)
+                try symbolicatedContent.string.write(toFile: output, atomically: false, encoding: .utf8)
             } else {
                 let fallbackOutput = verbose ? "No symbolicated content" : ""
                 print(symbolicator.symbolicatedContent ?? fallbackOutput)

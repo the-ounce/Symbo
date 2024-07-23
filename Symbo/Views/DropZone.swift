@@ -48,12 +48,20 @@ class DropZone: NSView {
     var fileTypes: [String] {
         get { return _fileTypes }
         set {
-            _fileTypes = newValue.map {
-                // Prepend "." to every fileType if needed
-                ($0.hasPrefix(".") ? "" : ".").appending($0.lowercased())
+            _fileTypes = newValue.map { fileType -> String in
+                if fileType.hasPrefix(".") {
+                    return fileType.lowercased()
+                } else {
+                    return "." + fileType.lowercased()
+                }
             }
+
+            // Generate the file types without the leading dot
+            fileTypesWithoutDot = _fileTypes.map { String($0.dropFirst()) }
         }
     }
+
+    var fileTypesWithoutDot: [String] = []
 
     var fileTypesPredicate: NSPredicate {
         let predicateFormat = (0..<fileTypes.count).map { _ in "SELF ENDSWITH[c] %@" }.joined(separator: " OR ")
@@ -206,6 +214,23 @@ class DropZone: NSView {
 
             tableViewScrollView.isHidden = true
         }
+
+        if allowsMultipleFiles {
+            addSubview(tableViewScrollView)
+
+            NSLayoutConstraint.activate([
+                tableViewScrollView.topAnchor.constraint(equalTo: topAnchor, constant: 6.5 + 60),
+                tableViewScrollView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6.5),
+                tableViewScrollView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6.5),
+                tableViewScrollView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -6.5)
+            ])
+
+            tableViewScrollView.isHidden = true
+        }
+
+        let clickGestureRecognizer = NSClickGestureRecognizer(target: self, action: #selector(dropZoneClicked))
+        clickGestureRecognizer.isEnabled = !allowsMultipleFiles || tableViewScrollView.isHidden
+        addGestureRecognizer(clickGestureRecognizer)
     }
 
     private func layoutElements() {
@@ -241,7 +266,7 @@ class DropZone: NSView {
                 containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
                 iconImageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-                iconImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor, constant: -46),
+                iconImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor, constant: -20),
                 iconImageView.heightAnchor.constraint(equalToConstant: 64),
                 iconImageView.widthAnchor.constraint(equalToConstant: 64),
 
@@ -353,17 +378,9 @@ class DropZone: NSView {
         let isFilled: Bool
 
         switch state {
-        case .oneFileEmpty:
+        case .oneFileEmpty, .oneFile, .multipleFilesEmpty:
             drawRect = bounds.insetBy(dx: borderPadding, dy: borderPadding)
-            isFilled = false
-            drawTableViewBorder = false
-        case .oneFile:
-            drawRect = bounds.insetBy(dx: borderPadding, dy: borderPadding)
-            isFilled = true
-            drawTableViewBorder = false
-        case .multipleFilesEmpty:
-            drawRect = bounds.insetBy(dx: borderPadding, dy: borderPadding)
-            isFilled = false
+            isFilled = state == .oneFile
             drawTableViewBorder = false
         case .multipleFiles:
             var rect = containerView.frame
@@ -385,13 +402,10 @@ class DropZone: NSView {
         }
 
         let roundedRectanglePath = NSBezierPath(roundedRect: drawRect, xRadius: 8, yRadius: 8)
-        roundedRectanglePath.lineWidth = 1.5
-
-        if !isFilled && !isFlashing {
-            roundedRectanglePath.setLineDash([6, 6, 6, 6], count: 4, phase: 0)
-        }
-
+        roundedRectanglePath.lineWidth = 1
         roundedRectanglePath.stroke()
+        NSColor.black.withAlphaComponent(0.6).setFill()
+        roundedRectanglePath.fill()
 
         if drawTableViewBorder {
             let borderRect = tableViewScrollView.frame.insetBy(dx: -0.5, dy: -0.5)
@@ -416,6 +430,27 @@ class DropZone: NSView {
         return true
     }
 
+    @objc
+    private func dropZoneClicked() {
+        DispatchQueue.main.async {
+                let openPanel = NSOpenPanel()
+                openPanel.allowsMultipleSelection = self.allowsMultipleFiles
+                openPanel.canChooseDirectories = false
+                openPanel.allowedFileTypes = self.fileTypesWithoutDot
+
+                if openPanel.runModal() == .OK {
+                    let selectedFileURLs = openPanel.urls
+                    let acceptedFileURLs = self.delegate?.receivedFiles(dropZone: self, fileURLs: selectedFileURLs) ?? selectedFileURLs
+
+                    if self.allowsMultipleFiles {
+                        self.files.formUnion(acceptedFileURLs)
+                    } else {
+                        self.files = acceptedFileURLs.last.flatMap { Set<URL>(arrayLiteral: $0) } ?? Set<URL>()
+                    }
+                }
+            }
+    }
+
     func flash() {
         isFlashing = true
         display()
@@ -424,6 +459,10 @@ class DropZone: NSView {
             self.isFlashing = false
             self.display()
         }
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
     }
 }
 

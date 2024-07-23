@@ -9,7 +9,7 @@ struct Symbolicator {
     let reportFile: ReportFile
     let dsymFiles: [DSYMFile]
 
-    var symbolicatedContent: String?
+    var symbolicatedContent: NSAttributedString?
     var logController: LogController
 
     init(reportFile: ReportFile, dsymFiles: [DSYMFile], logController: LogController) {
@@ -29,6 +29,8 @@ struct Symbolicator {
             }
         }
 
+        updateSymbolicatedContent()
+
         return !hasFailed
     }
 
@@ -43,9 +45,7 @@ struct Symbolicator {
             return false
         }
 
-        // Some processes in spindump reports might not have anything besides the header;
-        // Make sure to check that we have frames before dismissing it due to missing binary images section
-        if !process.frames.isEmpty && process.binaryImages.isEmpty {
+        if !process.stackFrames.isEmpty && process.binaryImages.isEmpty {
             logController.addLogMessage("""
             Could not detect application binary images for reported process \(process.name ?? "<null>").\
             Application might have crashed during launch.
@@ -53,54 +53,51 @@ struct Symbolicator {
             return false
         }
 
-        // There are some cases where reports don't have any meaningful data to symbolicate,
-        // Warn the user about them
-        guard !process.frames.isEmpty else {
+        guard !process.stackFrames.isEmpty else {
             logController.addLogMessage("""
             Did not find anything to symbolicate for process \(process.name ?? "<null>").
             """)
             return true
         }
 
-        var framesByLoadAddress = [String: [StackFrame]]()
-        process.frames.forEach { frame in
-            if framesByLoadAddress[frame.binaryImage.loadAddress] == nil {
-                framesByLoadAddress[frame.binaryImage.loadAddress] = []
-            }
+        var dsymsByUUID = [BinaryUUID: DSYMFile]()
+        var dsymsByLoadAddress = [String: DSYMFile]()
 
-            framesByLoadAddress[frame.binaryImage.loadAddress]?.append(frame)
+        // First, create a mapping of UUIDs to dSYM files
+        for dsymFile in dsymFiles {
+            for (uuid, _) in dsymFile.uuids {
+                dsymsByUUID[uuid] = dsymFile
+            }
         }
 
-        var dsymsByLoadAddress = [String: DSYMFile]()
-        process.binaryImages.forEach { binaryImage in
-            let dsymFile = dsymFiles.first {
-                guard let uuidForArchitecture = $0.uuids[architecture] else { return false }
-                return uuidForArchitecture == binaryImage.uuid
+        // Then, match binary images to dSYM files
+        for binaryImage in process.binaryImages {
+            if let dsymFile = dsymsByUUID[binaryImage.uuid] {
+                dsymsByLoadAddress[binaryImage.loadAddress] = dsymFile
             }
+        }
 
-            if let file = dsymFile {
-                dsymsByLoadAddress[binaryImage.loadAddress] = file
-            }
+        // Log any missing dSYM files
+        let missingDSYMs = process.binaryImages.filter { dsymsByLoadAddress[$0.loadAddress] == nil }
+        for missingBinary in missingDSYMs {
+            logController.addLogMessage("Missing dSYM for binary: \(missingBinary.name), \(missingBinary.uuid.pretty)")
         }
 
         guard !dsymsByLoadAddress.isEmpty else {
-            logController.addLogMessage("No dSYMs provided for symbolicating \(process.name ?? "<null>")")
+            logController.addLogMessage("No matching dSYMs found for symbolicating \(process.name ?? "<null>")")
             return true
         }
 
-        let replacedContent = NSMutableString(string: symbolicatedContent ?? reportFile.content)
         var hasFailed = false
 
-        framesByLoadAddress.forEach { loadAddress, frames in
-            let addresses = frames.map { $0.address }
-
-            guard let dsymFile = dsymsByLoadAddress[loadAddress] else { return }
+        process.stackFrames.forEach { frame in
+            guard let dsymFile = dsymsByLoadAddress[frame.binaryImage.loadAddress] else { return }
 
             let command = symbolicationCommand(
                 dsymPath: dsymFile.binaryPath,
-                architecture: architecture.atosString!, // swiftlint:disable:this force_unwrapping
-                loadAddress: loadAddress,
-                addresses: addresses
+                architecture: architecture.atosString!,
+                loadAddress: frame.binaryImage.loadAddress,
+                address: frame.cryptedAddress
             )
             logController.addLogMessage("Running command: \(command)")
 
@@ -111,22 +108,13 @@ struct Symbolicator {
                 "STDERR:\n\(atosResult.error?.trimmed ?? "")"
             ])
 
-            var errors = [String]()
-            let replacedSuccessfully = replaceContent(
-                replacedContent,
-                withAtosResult: atosResult,
-                for: frames,
-                errors: &errors
-            )
-            logController.addLogMessages(errors)
-
-            if !replacedSuccessfully {
-                logController.addLogMessage("Couldn't replace report entries with atos result")
+            if let symbolicatedAddress = atosResult.output?.trimmed, !symbolicatedAddress.isEmpty {
+                frame.symbolicatedAddress = symbolicatedAddress
+            } else {
+                logController.addLogMessage("Symbolication failed for address: \(frame.cryptedAddress)")
                 hasFailed = true
             }
         }
-
-        self.symbolicatedContent = replacedContent as String
 
         return !hasFailed
     }
@@ -135,58 +123,29 @@ struct Symbolicator {
         dsymPath: String,
         architecture: String,
         loadAddress: String,
-        addresses: [String]
+        address: String
     ) -> String {
-        let addressesString = addresses.joined(separator: " ")
-        return "xcrun atos -o \"\(dsymPath)\" -arch \(architecture) -l \(loadAddress) \(addressesString)"
+        return "xcrun atos -o \"\(dsymPath)\" -arch \(architecture) -l \(loadAddress) \(address)"
     }
 
-    private func replaceContent(
-        _ content: NSMutableString,
-        withAtosResult atosResult: CommandResult,
-        for frames: [StackFrame],
-        errors: inout [String]
-    ) -> Bool {
-        if let error = atosResult.error?.trimmed, error != "" { errors.append(error) }
+    private mutating func updateSymbolicatedContent() {
+        let mutableAttributedString = NSMutableAttributedString(string: reportFile.content)
+        var offset = 0
 
-        if !errors.isEmpty {
-            debugPrint(errors)
-        }
+        reportFile.processes.forEach { process in
+            process.stackFrames.forEach { frame in
+                if let symbolicatedAddress = frame.symbolicatedAddress,
+                   let range = reportFile.content.range(of: frame.originalLine) {
+                    let symbolicatedLine = frame.symbolicateLine(with: symbolicatedAddress)
+                    let nsRange = NSRange(range, in: reportFile.content)
+                    let adjustedRange = NSRange(location: nsRange.location + offset, length: nsRange.length)
 
-        guard
-            let output = atosResult.output?.trimmed,
-            output.components(separatedBy: .newlines).count > 0
-        else {
-            errors.append("atos command gave no output")
-            return false
-        }
-
-        let outputLines = output.components(separatedBy: .newlines)
-
-        guard frames.count == outputLines.count else {
-            errors.append("Unexpected result from atos command:\n\(output)")
-            return false
-        }
-
-        for index in 0..<outputLines.count {
-            let frame = frames[index]
-            let replacement = outputLines[index]
-
-            frame.replace(withResult: replacement)
-
-            if let symbolicatedLine = frame.symbolicatedLine {
-                logController.addLogMessage(
-                    "Replacing matches in sample/spindump report: \(String(describing: frame.line))"
-                )
-
-                content.replaceOccurrences(
-                    of: frame.line,
-                    with: symbolicatedLine,
-                    range: NSRange(location: 0, length: content.length)
-                )
+                    mutableAttributedString.replaceCharacters(in: adjustedRange, with: symbolicatedLine)
+                    offset += symbolicatedLine.length - nsRange.length
+                }
             }
         }
 
-        return true
+        symbolicatedContent = mutableAttributedString
     }
 }

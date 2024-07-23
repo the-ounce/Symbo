@@ -19,12 +19,13 @@ class TextWindowController: NSObject {
         }
     }
 
-    var text: String {
+    var attributedText: NSAttributedString {
         get {
-            return textView.string
+            return textView.attributedString()
         }
         set {
-            textView.string = newValue
+            textView.textStorage?.setAttributedString(newValue)
+            applyDefaultAttributesToText()
         }
     }
 
@@ -35,10 +36,15 @@ class TextWindowController: NSObject {
 
         super.init()
 
-        window.styleMask = [.unifiedTitleAndToolbar, .titled, .closable, .resizable]
+        window.styleMask = [.borderless, .titled, .closable, .resizable]
+        window.titlebarAppearsTransparent = false
+        window.titleVisibility = .visible
         window.title = title
         window.minSize = NSSize(width: 400, height: 400)
+        window.backgroundColor = .black
 
+        setupTextView()
+        setupScrollView()
         setupToolbar()
     }
 
@@ -49,85 +55,80 @@ class TextWindowController: NSObject {
         window.toolbar = toolbar
     }
 
-    @objc func showWindow() {
+    private func setupTextView() {
+        textView.autoresizingMask = .width
+        textView.isEditable = false
+    }
+
+    private func setupScrollView() {
+        scrollView.documentView = textView
+        scrollView.hasVerticalScroller = true
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+
         let contentView = window.contentView!
+        contentView.addSubview(scrollView)
 
-        if scrollView.superview != contentView {
-            contentView.addSubview(scrollView)
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+        ])
+    }
 
-            scrollView.translatesAutoresizingMaskIntoConstraints = false
-            scrollView.hasVerticalScroller = true
+    private func applyDefaultAttributesToText() {
+        guard let textStorage = textView.textStorage else { return }
 
-            NSLayoutConstraint.activate([
-                scrollView.topAnchor.constraint(equalTo: contentView.topAnchor),
-                scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-                scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-                scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
-            ])
+        let defaultAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont(name: "Menlo", size: NSFont.smallSystemFontSize) ?? NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+            .foregroundColor: NSColor.white.withAlphaComponent(0.85)
+        ]
 
-            textView.autoresizingMask = .width
+        let fullRange = NSRange(location: 0, length: textStorage.length)
 
-            var fonts = [NSFont]()
+        textStorage.enumerateAttributes(in: fullRange, options: []) { (attributes, range, _) in
+            var newAttributes = [NSAttributedString.Key: Any]()
 
-            #if compiler(>=5.1) // Only build this part in Xcode 11, which knows about monospacedSystemFont
-            if #available(OSX 10.15, *) {
-                fonts.append(NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular))
+            for (key, value) in defaultAttributes {
+                if attributes[key] == nil {
+                    newAttributes[key] = value
+                }
             }
-            #endif
 
-            let monospacedFonts = ["SFMono-Regular", "Menlo"].compactMap {
-                NSFont(name: $0, size: NSFont.systemFontSize)
+            if !newAttributes.isEmpty {
+                textStorage.addAttributes(newAttributes, range: range)
             }
-
-            fonts.append(contentsOf: monospacedFonts)
-
-            textView.font = fonts.first
-            textView.isEditable = false
-
-            scrollView.documentView = textView
         }
+    }
 
+    @objc func showWindow() {
         window.makeKeyAndOrderFront(nil)
     }
 
     @objc func save() {
-        let saveFailureHandler: (Error) -> Void = { error in
-            let alert = NSAlert()
-            alert.informativeText = error.localizedDescription
-            alert.alertStyle = .critical
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
-        }
+        let savePanel = NSSavePanel()
+        savePanel.allowedFileTypes = ["crash"]
+        savePanel.canCreateDirectories = true
 
         if let defaultSaveURL = defaultSaveURL {
-            do {
-                try text.write(to: defaultSaveURL, atomically: true, encoding: .utf8)
-                window.orderOut(nil)
-                NSWorkspace.shared.activateFileViewerSelecting([defaultSaveURL])
-            } catch {
-                saveFailureHandler(error)
-            }
-        } else {
-            savePanel.beginSheetModal(for: window) { response in
-                switch response {
-                case .OK:
-                    guard let url = self.savePanel.url else { return }
+            savePanel.directoryURL = defaultSaveURL.deletingLastPathComponent()
+            savePanel.nameFieldStringValue = defaultSaveURL.lastPathComponent
+        }
 
-                    do {
-                        try self.text.write(to: url, atomically: true, encoding: .utf8)
-                        self.window.orderOut(nil)
-                    } catch {
-                        saveFailureHandler(error)
-                    }
-                default:
-                    return
+        savePanel.beginSheetModal(for: window) { response in
+            if response == .OK, let url = savePanel.url {
+                do {
+                    try self.attributedText.string.write(to: url, atomically: true, encoding: .utf8)
+                } catch {
+                    let alert = NSAlert(error: error)
+                    alert.runModal()
                 }
             }
         }
     }
 
     @objc func clear() {
-        text = ""
+        attributedText = NSAttributedString()
     }
 }
 

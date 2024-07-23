@@ -12,6 +12,7 @@ class MainController {
     private var updateButton: NSButton?
     private var availableUpdateURL: URL?
 
+    private let titlebarView = NSView()
     private let dropZonesContainerView = NSView()
     private let statusView = NSView()
     private let statusTextField = NSTextField()
@@ -23,20 +24,38 @@ class MainController {
 
     private var isSymbolicating: Bool = false {
         didSet {
-            symbolicateButton.isEnabled = !isSymbolicating
+            updateSymbolicateButtonState()
             symbolicateButton.title = isSymbolicating ? "Symbolicating…" : "Symbolicate"
         }
+    }
+
+    private var isReportFileAvailable: Bool = false {
+        didSet {
+            updateSymbolicateButtonState()
+        }
+    }
+
+    private func updateSymbolicateButtonState() {
+        symbolicateButton.isEnabled = isReportFileAvailable && !isSymbolicating
     }
 
     private let logController: ViewableLogController = DefaultViewableLogController()
 
     init() {
         logController.delegate = self
+        inputCoordinator.delegate = self
 
         let reportFileDropZone = inputCoordinator.reportFileDropZone
         let dsymFilesDropZone = inputCoordinator.dsymFilesDropZone
-        mainWindow.styleMask = [.unifiedTitleAndToolbar, .titled]
-        mainWindow.title = "MacSymbolicator"
+
+        let titleLabel = NSTextField(labelWithString: "Symbo")
+        titleLabel.font = NSFont.systemFont(ofSize: 14, weight: .semibold)
+        titleLabel.textColor = NSColor.labelColor
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        titlebarView.translatesAutoresizingMaskIntoConstraints = false
+        titlebarView.wantsLayer = true
+        titlebarView.addSubview(titleLabel)
 
         statusTextField.drawsBackground = false
         statusTextField.isBezeled = false
@@ -44,13 +63,16 @@ class MainController {
         statusTextField.isSelectable = false
 
         symbolicateButton.title = "Symbolicate"
-        symbolicateButton.bezelStyle = .rounded
+        symbolicateButton.font = NSFont.systemFont(ofSize: 14, weight: .medium)
+        symbolicateButton.bezelStyle = .regularSquare
         symbolicateButton.focusRingType = .none
+        symbolicateButton.setButtonType(.momentaryPushIn)
         symbolicateButton.target = self
         symbolicateButton.action = #selector(MainController.symbolicate)
+        symbolicateButton.isEnabled = false
 
         viewLogsButton.title = "View Logs…"
-        viewLogsButton.bezelStyle = .rounded
+        viewLogsButton.bezelStyle = .regularSquare
         viewLogsButton.focusRingType = .none
         viewLogsButton.target = logController
         viewLogsButton.action = #selector(ViewableLogController.viewLogs)
@@ -63,17 +85,30 @@ class MainController {
         contentView.setContentHuggingPriority(.defaultHigh, for: .vertical)
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
-        contentView.addSubview(dropZonesContainerView)
+        let dropZonesStackView = NSStackView()
+        dropZonesStackView.orientation = .horizontal
+        dropZonesStackView.distribution = .fillEqually
+        dropZonesStackView.spacing = 5
+        dropZonesStackView.translatesAutoresizingMaskIntoConstraints = false
+
+        let reportFileDropZoneContainer = NSView()
+        reportFileDropZoneContainer.translatesAutoresizingMaskIntoConstraints = false
+        reportFileDropZoneContainer.addSubview(reportFileDropZone)
+
+        let dsymFilesDropZoneContainer = NSView()
+        dsymFilesDropZoneContainer.translatesAutoresizingMaskIntoConstraints = false
+        dsymFilesDropZoneContainer.addSubview(dsymFilesDropZone)
+
+        dropZonesStackView.addArrangedSubview(reportFileDropZoneContainer)
+        dropZonesStackView.addArrangedSubview(dsymFilesDropZoneContainer)
+
+        contentView.addSubview(dropZonesStackView)
         contentView.addSubview(statusView)
-        dropZonesContainerView.addSubview(reportFileDropZone)
-        dropZonesContainerView.addSubview(dsymFilesDropZone)
+        contentView.addSubview(titlebarView)
         statusView.addSubview(statusTextField)
         statusView.addSubview(symbolicateButton)
         statusView.addSubview(viewLogsButton)
 
-        dropZonesContainerView.translatesAutoresizingMaskIntoConstraints = false
-        reportFileDropZone.translatesAutoresizingMaskIntoConstraints = false
-        dsymFilesDropZone.translatesAutoresizingMaskIntoConstraints = false
         statusView.translatesAutoresizingMaskIntoConstraints = false
         statusTextField.translatesAutoresizingMaskIntoConstraints = false
         symbolicateButton.translatesAutoresizingMaskIntoConstraints = false
@@ -83,29 +118,34 @@ class MainController {
             contentView.heightAnchor.constraint(equalToConstant: 400),
             contentView.widthAnchor.constraint(equalToConstant: 800),
 
-            dropZonesContainerView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            dropZonesContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            dropZonesContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            dropZonesContainerView.heightAnchor.constraint(lessThanOrEqualToConstant: mainWindow.frame.size.height),
-            dropZonesContainerView.widthAnchor.constraint(lessThanOrEqualToConstant: mainWindow.frame.size.width),
+            titlebarView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            titlebarView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            titlebarView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            titlebarView.heightAnchor.constraint(equalToConstant: 30),
 
-            statusView.topAnchor.constraint(equalTo: dropZonesContainerView.bottomAnchor),
+            titleLabel.centerXAnchor.constraint(equalTo: titlebarView.centerXAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: titlebarView.centerYAnchor),
+
+            dropZonesStackView.topAnchor.constraint(equalTo: titlebarView.topAnchor, constant: 25),
+            dropZonesStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 5),
+            dropZonesStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -5),
+            dropZonesStackView.bottomAnchor.constraint(equalTo: statusView.topAnchor),
+
+            reportFileDropZone.topAnchor.constraint(equalTo: reportFileDropZoneContainer.topAnchor),
+            reportFileDropZone.leadingAnchor.constraint(equalTo: reportFileDropZoneContainer.leadingAnchor),
+            reportFileDropZone.trailingAnchor.constraint(equalTo: reportFileDropZoneContainer.trailingAnchor),
+            reportFileDropZone.bottomAnchor.constraint(equalTo: reportFileDropZoneContainer.bottomAnchor),
+
+            dsymFilesDropZone.topAnchor.constraint(equalTo: dsymFilesDropZoneContainer.topAnchor),
+            dsymFilesDropZone.leadingAnchor.constraint(equalTo: dsymFilesDropZoneContainer.leadingAnchor),
+            dsymFilesDropZone.trailingAnchor.constraint(equalTo: dsymFilesDropZoneContainer.trailingAnchor),
+            dsymFilesDropZone.bottomAnchor.constraint(equalTo: dsymFilesDropZoneContainer.bottomAnchor),
+
+            statusView.topAnchor.constraint(equalTo: dropZonesStackView.bottomAnchor),
             statusView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             statusView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            statusView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
+            statusView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             statusView.heightAnchor.constraint(equalToConstant: 50),
-
-            reportFileDropZone.topAnchor.constraint(equalTo: dropZonesContainerView.topAnchor),
-            reportFileDropZone.leadingAnchor.constraint(equalTo: dropZonesContainerView.leadingAnchor),
-            reportFileDropZone.bottomAnchor.constraint(equalTo: dropZonesContainerView.bottomAnchor),
-            reportFileDropZone.heightAnchor.constraint(equalTo: dropZonesContainerView.heightAnchor),
-            reportFileDropZone.widthAnchor.constraint(equalTo: dropZonesContainerView.widthAnchor, multiplier: 0.5),
-
-            dsymFilesDropZone.topAnchor.constraint(equalTo: dropZonesContainerView.topAnchor),
-            dsymFilesDropZone.trailingAnchor.constraint(equalTo: dropZonesContainerView.trailingAnchor),
-            dsymFilesDropZone.bottomAnchor.constraint(equalTo: dropZonesContainerView.bottomAnchor),
-            dsymFilesDropZone.heightAnchor.constraint(equalTo: dropZonesContainerView.heightAnchor),
-            dsymFilesDropZone.widthAnchor.constraint(equalTo: dropZonesContainerView.widthAnchor, multiplier: 0.5),
 
             statusTextField.leadingAnchor.constraint(equalTo: statusView.leadingAnchor, constant: 20),
             statusTextField.centerYAnchor.constraint(equalTo: statusView.centerYAnchor),
@@ -114,10 +154,12 @@ class MainController {
             symbolicateButton.centerXAnchor.constraint(equalTo: statusView.centerXAnchor),
             symbolicateButton.centerYAnchor.constraint(equalTo: statusView.centerYAnchor),
             symbolicateButton.widthAnchor.constraint(equalToConstant: 120),
+            symbolicateButton.heightAnchor.constraint(equalToConstant: 30),
 
             viewLogsButton.trailingAnchor.constraint(equalTo: statusView.trailingAnchor, constant: -20),
             viewLogsButton.centerYAnchor.constraint(equalTo: statusView.centerYAnchor),
-            viewLogsButton.widthAnchor.constraint(equalToConstant: 120)
+            viewLogsButton.widthAnchor.constraint(equalToConstant: 120),
+            viewLogsButton.heightAnchor.constraint(equalToConstant: 20)
         ])
 
         mainWindow.makeKeyAndOrderFront(nil)
@@ -152,7 +194,7 @@ class MainController {
 
             DispatchQueue.main.async {
                 if success {
-                    self.textWindowController.text = symbolicator.symbolicatedContent ?? ""
+                    self.textWindowController.attributedText = symbolicator.symbolicatedContent ?? NSAttributedString(string: "")
                     self.textWindowController.defaultSaveURL = reportFile.symbolicatedContentSaveURL
                     self.textWindowController.showWindow()
                 } else {
@@ -212,5 +254,11 @@ extension MainController: LogControllerDelegate {
         DispatchQueue.main.async {
             self.viewLogsButton.isHidden = logMessages.isEmpty
         }
+    }
+}
+
+extension MainController: InputCoordinatorDelegate {
+    func inputCoordinator(_ coordinator: InputCoordinator, didReceiveReportFile: Bool) {
+        isReportFileAvailable = didReceiveReportFile
     }
 }

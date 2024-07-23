@@ -3,158 +3,76 @@
 //  MacSymbolicator
 //
 
-import Foundation
+import AppKit
 
 class StackFrame {
     private enum Parsing {
         static let lineRegex = #"^\d+\s+.*?0x.*?\s.*?\s\+\s.*$"#
         static let componentsRegex = #"^\d+\s+(.*?)\s+(0x.*?)\s(.*?)\s\+\s(.*)"#
-
-        static func replacementLoadAddressRegex(address: String, loadAddress: String) -> NSRegularExpression {
-            // swiftlint:disable:next force_try
-            try! NSRegularExpression(
-                pattern: #"\#(address)\s\#(loadAddress)(?=\s\+.*?$)"#,
-                options: [.caseInsensitive, .anchorsMatchLines]
-            )
-        }
-
-        static func replacementTargetNameRegex(address: String, targetName: String) -> NSRegularExpression {
-            // swiftlint:disable:next force_try
-            try! NSRegularExpression(
-                pattern: #"\#(address)\s\#(targetName)(?=\s\+.*?$)"#,
-                options: [.caseInsensitive, .anchorsMatchLines]
-            )
-        }
-
-        static let sampleLineRegex = #"\?{3}\s+\(in\s.*?\)\s+load\saddress\s+0x.*?\s+\+\s+.*?\s+\[0x.*?\]"#
-        static let sampleComponentsRegex = #"\?{3}\s+\(in\s.*?\)\s+load\saddress\s+(0x.*?)\s+\+\s+(.*?)\s+\[(0x.*?)\]"#
-
-        static func sampleReplacementRegex(address: String) -> NSRegularExpression {
-            // swiftlint:disable:next force_try
-            try! NSRegularExpression(
-                pattern: #"\?{3}.*?\[\#(address)\]"#,
-                options: [.caseInsensitive, .anchorsMatchLines]
-            )
-        }
-
-        static let spindumpLineRegex = #"^\s*\*?\d+\s+\?{3}\s+\(.*?\s+\+\s+.*?\)\s+\[0x.*?\]"#
-        static let spindumpComponentsRegex = #"^\s*\*?\d+\s+\?{3}\s+\((.*?)\s\+\s+(.*?)\)\s+\[(0x.*?)\]"#
     }
 
-    let line: String
-    var symbolicatedLine: String?
+    let originalLine: String
+    let cryptedAddress: String
+    var symbolicatedAddress: String?
 
-    let address: String
     let binaryImage: BinaryImage
     let byteOffset: String
 
-    var readableByteOffset: String {
-        // Samples can have hexadecimal byte offsets, so we convert them to integers
-        let value: Int?
-        if byteOffset.hasPrefix("0x") {
-            value = Int(byteOffset.dropFirst(2), radix: 16)
-        } else {
-            value = Int(byteOffset)
+    init?(parsingLine line: String, binaryImageMap: BinaryImageMap) {
+        self.originalLine = line
+
+        guard let components = line.scan(
+            pattern: Parsing.componentsRegex,
+            options: [.caseInsensitive]
+        ).first, components.count == 4 else {
+            return nil
         }
 
-        return value.flatMap { String($0) } ?? byteOffset
+        cryptedAddress = components[1]
+        let loadAddressOrTargetName = components[2]
+        byteOffset = components[3]
+
+        guard let binaryImage = binaryImageMap.binaryImage(forLoadAddress: loadAddressOrTargetName) ??
+                  binaryImageMap.binaryImage(forName: loadAddressOrTargetName) else {
+            return nil
+        }
+
+        self.binaryImage = binaryImage
     }
 
-    static func find(
-        in content: String,
-        binaryImageMap: BinaryImageMap
-    ) -> [StackFrame] {
+    func symbolicateLine(with symbolicatedAddress: String) -> NSAttributedString {
+        let newLine = originalLine.replacingOccurrences(of: binaryImage.loadAddress, with: symbolicatedAddress)
+
+        let marker = ">>>> "
+        let spacesBeforeAddress = String(repeating: " ", count: 5)
+
+        var resultString: String
+        if let range = newLine.range(of: spacesBeforeAddress + cryptedAddress) {
+            resultString = newLine.replacingCharacters(in: range, with: marker + cryptedAddress)
+        } else {
+            resultString = newLine.replacingOccurrences(of: cryptedAddress, with: marker + cryptedAddress)
+        }
+
+        let attributedString = NSMutableAttributedString(string: resultString)
+
+        // Color the process name
+        if let processNameRange = resultString.range(of: binaryImage.name) {
+            let nsRange = NSRange(processNameRange, in: resultString)
+            attributedString.addAttribute(.foregroundColor, value: NSColor.systemOrange, range: nsRange)
+        }
+
+        return attributedString
+    }
+
+    static func find(in content: String, binaryImageMap: BinaryImageMap) -> [StackFrame] {
         let lines = content.scan(
             pattern: Parsing.lineRegex,
             options: [.caseInsensitive, .anchorsMatchLines]
         )
-        let sampleLines = content.scan(
-            pattern: Parsing.sampleLineRegex,
-            options: [.caseInsensitive, .anchorsMatchLines]
-        )
-        let spindumpLines = content.scan(
-            pattern: Parsing.spindumpLineRegex,
-            options: [.caseInsensitive, .anchorsMatchLines]
-        )
 
-        return (lines + sampleLines + spindumpLines).compactMap { result -> StackFrame? in
+        return lines.compactMap { result -> StackFrame? in
             guard let line = result.first else { return nil }
             return StackFrame(parsingLine: line, binaryImageMap: binaryImageMap)
         }
-    }
-
-    init?(parsingLine line: String, binaryImageMap: BinaryImageMap) {
-        self.line = line
-
-        let loadAddressOrTargetName: String
-        let address: String
-
-        if let components = line.scan(
-            pattern: Parsing.componentsRegex,
-            options: [.caseInsensitive]
-        ).first, components.count == 4 {
-            // Crash report format, 0 = target, 1 = address, 2 = load address / target, 3 = byte offset
-            address = components[1]
-            loadAddressOrTargetName = components[2]
-            byteOffset = components[3]
-
-            guard components[2].hasPrefix("0x") || components[0] == components[2] else {
-                // Only needs symbolication if we have a load address or the target name on the right side
-                return nil
-            }
-        } else if let components = line.scan(
-            pattern: Parsing.sampleComponentsRegex,
-            options: [.caseInsensitive]
-        ).first, components.count == 3 {
-            // Sample format, 0 = load address, 1 = byte offset, 2 = address
-            loadAddressOrTargetName = components[0]
-            byteOffset = components[1]
-            address = components[2]
-        } else if let components = line.scan(
-            pattern: Parsing.spindumpComponentsRegex,
-            options: [.caseInsensitive]
-        ).first, components.count == 3 {
-            // Spindump format, 0 = target, 1 = byte offset, 2 = address
-            loadAddressOrTargetName = components[0]
-            byteOffset = components[1]
-            address = components[2]
-        } else {
-            return nil
-        }
-
-        let binaryImage =
-            binaryImageMap.binaryImage(forLoadAddress: loadAddressOrTargetName) ??
-            binaryImageMap.binaryImage(forName: loadAddressOrTargetName)
-
-        guard let binaryImage = binaryImage else {
-            return nil
-        }
-
-        self.address = address
-        self.binaryImage = binaryImage
-    }
-
-    func replace(withResult result: String) {
-        let symbolicatedLine = NSMutableString(string: line)
-
-        Parsing.sampleReplacementRegex(address: address).replaceMatches(
-            in: symbolicatedLine,
-            range: NSRange(location: 0, length: symbolicatedLine.length),
-            withTemplate: "\(result) + \(readableByteOffset)  [\(address)]"
-        )
-
-        Parsing.replacementLoadAddressRegex(address: address, loadAddress: binaryImage.loadAddress).replaceMatches(
-            in: symbolicatedLine,
-            range: NSRange(location: 0, length: symbolicatedLine.length),
-            withTemplate: "\(address) \(result)"
-        )
-
-        Parsing.replacementTargetNameRegex(address: address, targetName: binaryImage.name).replaceMatches(
-            in: symbolicatedLine,
-            range: NSRange(location: 0, length: symbolicatedLine.length),
-            withTemplate: "\(address) \(result)"
-        )
-
-        self.symbolicatedLine = String(symbolicatedLine)
     }
 }

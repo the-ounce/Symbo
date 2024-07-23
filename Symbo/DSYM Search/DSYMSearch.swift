@@ -11,107 +11,148 @@ struct SearchResult {
 }
 
 class DSYMSearch {
-    private struct ProcessingResult {
-        let missingUUIDs: Set<String>
-    }
-
+    typealias LogHandler = (String) -> Void
+    typealias ProgressHandler = (Float) -> Void
     typealias Callback = (_ finished: Bool, _ results: [SearchResult]?) -> Void
+
     private static let spotlightSearch = SpotlightSearch()
 
-    private static func processSearchResults(
-        _ results: [SearchResult],
-        expectedUUIDs: Set<String>,
-        logHandler logMessage: @escaping LogHandler,
-        callback: @escaping Callback
-    ) -> ProcessingResult {
-        // Log results and deduplicate them since some DSYMs might be duplicated in other locations.
-        var foundItems: [String: SearchResult] = [:]
-
-        for result in results {
-            logMessage("Found \(result.matchedUUID): \(result.path)")
-            foundItems[result.matchedUUID] = result
-        }
-
-        if results.isEmpty {
-            logMessage("No results.")
-        }
-
-        let foundUUIDs = Set<String>(foundItems.keys)
-        let missingUUIDs = expectedUUIDs.subtracting(foundUUIDs)
-
-        callback(missingUUIDs.isEmpty, Array(foundItems.values))
-
-        return ProcessingResult(missingUUIDs: missingUUIDs)
+    enum SearchLocation: CaseIterable {
+        case spotlight
+        case nonRecursive
+        case recursive
     }
 
     static func search(
         forUUIDs uuids: [String],
         reportFileDirectory: String,
-        logHandler logMessage: @escaping LogHandler,
+        logHandler: @escaping LogHandler,
+        progressHandler: @escaping ProgressHandler,
         callback: @escaping Callback
     ) {
-        logMessage("Searching Spotlight for UUIDs: \(uuids)")
+        let searchGroup = DispatchGroup()
+        let searchQueue = DispatchQueue(label: "com.macsymbolicator.dsymsearch", attributes: .concurrent)
 
-        let expectedUUIDs = Set<String>(uuids)
+        var results: [SearchLocation: [SearchResult]] = [:]
+        var errors: [SearchLocation: Error] = [:]
 
-        spotlightSearch.search(forUUIDs: uuids) { results in
-            // Processing of results and file searches should be on a background thread to not block main
-            DispatchQueue.global().async {
-                var processingResult: ProcessingResult
+        let totalLocations = SearchLocation.allCases.count
+        var completedLocations = 0
 
-                if let results {
-                    processingResult = processSearchResults(
-                        results,
-                        expectedUUIDs: expectedUUIDs,
-                        logHandler: logMessage,
-                        callback: callback
-                    )
-                } else {
-                    logMessage("Spotlight query could not be started.")
-                    processingResult = ProcessingResult(missingUUIDs: expectedUUIDs)
+        for location in SearchLocation.allCases {
+            searchGroup.enter()
+            searchQueue.async {
+                self.searchLocation(
+                    location,
+                    forUUIDs: uuids,
+                    reportFileDirectory: reportFileDirectory,
+                    logHandler: logHandler
+                ) { locationResults, error in
+                    if let error = error {
+                        errors[location] = error
+                    } else if let locationResults = locationResults {
+                        results[location] = locationResults
+                    }
+
+                    searchQueue.async {
+                        completedLocations += 1
+                        let progress = Float(completedLocations) / Float(totalLocations)
+                        progressHandler(progress)
+                    }
+
+                    searchGroup.leave()
                 }
+            }
+        }
 
-                // No need to continue if we already found what we're looking for.
-                var missingUUIDs = processingResult.missingUUIDs
-                guard !missingUUIDs.isEmpty else { return }
+        // Timeout for the entire search process
+        let timeoutSeconds: Double = 300 // 5 minutes
+        let timeoutWorkItem = DispatchWorkItem {
+            logHandler("DSYMSearch timed out after \(Int(timeoutSeconds)) seconds.")
+            searchGroup.leave() // Force the group to finish
+        }
 
-                logMessage("Non-recursive file search starting at \(reportFileDirectory) for UUIDs: \(missingUUIDs)")
-                let nonRecursiveFileSearchResults = FileSearch
-                    .nonRecursive
-                    .in(directory: reportFileDirectory)
-                    .with(logHandler: logMessage)
-                    .search(fileExtension: "dsym").sorted().matching(uuids: Array(missingUUIDs))
+        DispatchQueue.global().asyncAfter(deadline: .now() + timeoutSeconds, execute: timeoutWorkItem)
 
-                processingResult = processSearchResults(
-                    nonRecursiveFileSearchResults,
-                    expectedUUIDs: expectedUUIDs,
-                    logHandler: logMessage,
-                    callback: callback
-                )
+        searchGroup.notify(queue: .main) {
+            timeoutWorkItem.cancel() // Cancel the timeout if all searches complete in time
 
-                // No need to continue if we already found what we're looking for.
-                missingUUIDs = processingResult.missingUUIDs
-                guard !missingUUIDs.isEmpty else { return }
+            let allResults = results.values.flatMap { $0 }
+            let allErrors = errors.values
 
-                logMessage(
-                    "Recursive file search starting at ~/Library/Developer/Xcode/Archives/ for UUIDs: \(missingUUIDs)"
-                )
-                let recursiveFileSearchResults = FileSearch
-                    .recursive
-                    .in(directory: "~/Library/Developer/Xcode/Archives/")
-                    .with(logHandler: logMessage)
-                    .search(fileExtension: "dsym").sorted().matching(uuids: Array(missingUUIDs))
-                processingResult = processSearchResults(
-                    recursiveFileSearchResults,
-                    expectedUUIDs: expectedUUIDs,
-                    logHandler: logMessage,
-                    callback: callback
-                )
-                missingUUIDs = processingResult.missingUUIDs
-                logMessage("Missing UUIDs: \(missingUUIDs)")
+            if !allErrors.isEmpty {
+                logHandler("Errors occurred during DSYMSearch: \(allErrors)")
+            }
+
+            callback(errors.isEmpty, allResults)
+        }
+    }
+
+    private static func searchLocation(
+        _ location: SearchLocation,
+        forUUIDs uuids: [String],
+        reportFileDirectory: String,
+        logHandler: @escaping LogHandler,
+        completion: @escaping ([SearchResult]?, Error?) -> Void
+    ) {
+        switch location {
+        case .spotlight:
+            searchSpotlight(forUUIDs: uuids, logHandler: logHandler, completion: completion)
+        case .nonRecursive:
+            searchNonRecursive(forUUIDs: uuids, inDirectory: reportFileDirectory, logHandler: logHandler, completion: completion)
+        case .recursive:
+            searchRecursive(forUUIDs: uuids, logHandler: logHandler, completion: completion)
+        }
+    }
+
+    private static func searchSpotlight(
+        forUUIDs uuids: [String],
+        logHandler: @escaping LogHandler,
+        completion: @escaping ([SearchResult]?, Error?) -> Void
+    ) {
+        logHandler("Searching Spotlight for UUIDs: \(uuids)")
+        spotlightSearch.search(forUUIDs: uuids) { results in
+            if let results = results {
+                logHandler("Spotlight search completed. Found \(results.count) results.")
+                completion(results, nil)
+            } else {
+                logHandler("Spotlight query could not be started.")
+                completion(nil, NSError(domain: "DSYMSearch", code: 1, userInfo: [NSLocalizedDescriptionKey: "Spotlight query failed"]))
             }
         }
     }
 
-    private init() {}
+    private static func searchNonRecursive(
+        forUUIDs uuids: [String],
+        inDirectory directory: String,
+        logHandler: @escaping LogHandler,
+        completion: @escaping ([SearchResult]?, Error?) -> Void
+    ) {
+        logHandler("Non-recursive file search starting at \(directory) for UUIDs: \(uuids)")
+        let results = FileSearch
+            .nonRecursive
+            .in(directory: directory)
+            .with(logHandler: logHandler)
+            .search(fileExtension: "dsym").sorted().matching(uuids: uuids)
+
+        logHandler("Non-recursive search completed. Found \(results.count) results.")
+        completion(results, nil)
+    }
+
+    private static func searchRecursive(
+        forUUIDs uuids: [String],
+        logHandler: @escaping LogHandler,
+        completion: @escaping ([SearchResult]?, Error?) -> Void
+    ) {
+        let searchDirectory = "~/Library/Developer/Xcode/Archives/"
+        logHandler("Recursive file search starting at \(searchDirectory) for UUIDs: \(uuids)")
+        let results = FileSearch
+            .recursive
+            .in(directory: searchDirectory)
+            .with(logHandler: logHandler)
+            .search(fileExtension: "dsym").sorted().matching(uuids: uuids)
+
+        logHandler("Recursive search completed. Found \(results.count) results.")
+        completion(results, nil)
+    }
 }
