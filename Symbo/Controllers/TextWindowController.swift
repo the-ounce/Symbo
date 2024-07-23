@@ -35,9 +35,12 @@ class TextWindowController: NSObject {
 
         super.init()
 
-        window.styleMask = [.unifiedTitleAndToolbar, .titled, .closable, .resizable]
+        window.styleMask = [.borderless, .titled, .closable, .resizable]
+        window.titlebarAppearsTransparent = false
+        window.titleVisibility = .visible
         window.title = title
         window.minSize = NSSize(width: 400, height: 400)
+        window.backgroundColor = .black
 
         setupToolbar()
     }

@@ -70,12 +70,28 @@ class InputCoordinator {
         isSearchingForDSYMs = true
         updateDSYMDetailText()
 
+        let searchTimeout: TimeInterval = 300 // 5 minutes timeout
+        let searchWorkItem = DispatchWorkItem { [weak self] in
+            self?.isSearchingForDSYMs = false
+            self?.updateDSYMDetailText()
+            self?.logController.addLogMessage("dSYM search timed out after \(Int(searchTimeout)) seconds.")
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + searchTimeout, execute: searchWorkItem)
+
         DSYMSearch.search(
             forUUIDs: remainingUUIDs,
             reportFileDirectory: reportFile.path.deletingLastPathComponent().path,
             logHandler: logController.addLogMessage,
+            progressHandler: { [weak self] progress in
+                DispatchQueue.main.async {
+                    self?.updateSearchProgress(progress)
+                }
+            },
             callback: { [weak self] finished, results in
                 DispatchQueue.main.async {
+                    searchWorkItem.cancel()
+
                     results?.forEach { dsymResult in
                         let dsymURL = URL(fileURLWithPath: dsymResult.path)
                         self?.dsymFilesDropZone.acceptFile(url: dsymURL)
@@ -89,6 +105,13 @@ class InputCoordinator {
                 }
             }
         )
+    }
+
+    func updateSearchProgress(_ progress: Float) {
+        // Update UI to show search progress
+        // For example, update a progress bar or show percentage in the detail text
+        let percentage = Int(progress * 100)
+        dsymFilesDropZone.detailText = "Searching... \(percentage)%"
     }
 
     func updateCrashDetailText() {
