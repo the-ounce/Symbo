@@ -7,6 +7,7 @@ import Foundation
 
 protocol InputCoordinatorDelegate: AnyObject {
     func inputCoordinator(_ coordinator: InputCoordinator, didReceiveReportFile: Bool)
+    func inputCoordinator(_ coordinator: InputCoordinator, didChangeDSYMAvailability isAvailable: Bool)
 }
 
 class InputCoordinator {
@@ -28,7 +29,11 @@ class InputCoordinator {
     )
 
     private(set) var reportFile: ReportFile?
-    private(set) var dsymFiles: [DSYMFile] = []
+    private(set) var dsymFiles: [DSYMFile] = [] {
+        didSet {
+            delegate?.inputCoordinator(self, didChangeDSYMAvailability: !dsymFiles.isEmpty)
+        }
+    }
 
     private var isSearchingForDSYMs = false
 
@@ -53,6 +58,11 @@ class InputCoordinator {
         self.logController = logController
         reportFileDropZone.delegate = self
         dsymFilesDropZone.delegate = self
+    }
+
+    deinit {
+        reportFileDropZone.delegate = nil
+        dsymFilesDropZone.delegate = nil
     }
 
     func acceptReportFile(url fileURL: URL) -> Bool {

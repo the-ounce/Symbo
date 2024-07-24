@@ -79,8 +79,9 @@ class TextWindowController: NSObject {
     private func applyDefaultAttributesToText() {
         guard let textStorage = textView.textStorage else { return }
 
+        let fontSize = NSFont.smallSystemFontSize
         let defaultAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont(name: "Menlo", size: NSFont.smallSystemFontSize) ?? NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+            .font: NSFont(name: "Menlo", size: NSFont.smallSystemFontSize) ?? NSFont.systemFont(ofSize: fontSize),
             .foregroundColor: NSColor.white.withAlphaComponent(0.85)
         ]
 

@@ -35,16 +35,38 @@ struct Symbolicator {
     }
 
     mutating func symbolicateProcess(_ process: ReportProcess) -> Bool {
-        logController.addLogMessage("""
-        —————————————————————————————————————————————————
-        * Symbolicating process \(process.name ?? "<null>")
-        """)
+        logInitialMessage(for: process)
 
         guard let architecture = process.architecture else {
             logController.addLogMessage("Could not detect process architecture.")
             return false
         }
 
+        if !canSymbolicate(process) {
+            return false
+        }
+
+        let (_, dsymsByLoadAddress) = createDSymMappings(for: process)
+        logMissingDSyms(process: process, dsymsByLoadAddress: dsymsByLoadAddress)
+
+        guard !dsymsByLoadAddress.isEmpty else {
+            logController.addLogMessage("No matching dSYMs found for symbolicating \(process.name ?? "<null>")")
+            return true
+        }
+
+        return symbolicateStackFrames(process: process,
+                                      architecture: architecture,
+                                      dsymsByLoadAddress: dsymsByLoadAddress)
+    }
+
+    private func logInitialMessage(for process: ReportProcess) {
+        logController.addLogMessage("""
+        —————————————————————————————————————————————————
+        * Symbolicating process \(process.name ?? "<null>")
+        """)
+    }
+
+    private func canSymbolicate(_ process: ReportProcess) -> Bool {
         if !process.stackFrames.isEmpty && process.binaryImages.isEmpty {
             logController.addLogMessage("""
             Could not detect application binary images for reported process \(process.name ?? "<null>").\
@@ -53,70 +75,91 @@ struct Symbolicator {
             return false
         }
 
-        guard !process.stackFrames.isEmpty else {
+        if process.stackFrames.isEmpty {
             logController.addLogMessage("""
             Did not find anything to symbolicate for process \(process.name ?? "<null>").
             """)
-            return true
+            return false
         }
 
+        return true
+    }
+
+    private func createDSymMappings(for process: ReportProcess) -> ([BinaryUUID: DSYMFile], [String: DSYMFile]) {
         var dsymsByUUID = [BinaryUUID: DSYMFile]()
         var dsymsByLoadAddress = [String: DSYMFile]()
 
-        // First, create a mapping of UUIDs to dSYM files
         for dsymFile in dsymFiles {
             for (uuid, _) in dsymFile.uuids {
                 dsymsByUUID[uuid] = dsymFile
             }
         }
 
-        // Then, match binary images to dSYM files
         for binaryImage in process.binaryImages {
             if let dsymFile = dsymsByUUID[binaryImage.uuid] {
                 dsymsByLoadAddress[binaryImage.loadAddress] = dsymFile
             }
         }
 
-        // Log any missing dSYM files
+        return (dsymsByUUID, dsymsByLoadAddress)
+    }
+
+    private func logMissingDSyms(process: ReportProcess, dsymsByLoadAddress: [String: DSYMFile]) {
         let missingDSYMs = process.binaryImages.filter { dsymsByLoadAddress[$0.loadAddress] == nil }
         for missingBinary in missingDSYMs {
             logController.addLogMessage("Missing dSYM for binary: \(missingBinary.name), \(missingBinary.uuid.pretty)")
         }
+    }
 
-        guard !dsymsByLoadAddress.isEmpty else {
-            logController.addLogMessage("No matching dSYMs found for symbolicating \(process.name ?? "<null>")")
-            return true
-        }
-
+    private func symbolicateStackFrames(process: ReportProcess,
+                                        architecture: Architecture,
+                                        dsymsByLoadAddress: [String: DSYMFile]) -> Bool {
         var hasFailed = false
 
-        process.stackFrames.forEach { frame in
-            guard let dsymFile = dsymsByLoadAddress[frame.binaryImage.loadAddress] else { return }
+        for frame in process.stackFrames {
+            guard var dsymFile = dsymsByLoadAddress[frame.binaryImage.loadAddress] else { continue }
 
-            let command = symbolicationCommand(
-                dsymPath: dsymFile.binaryPath,
-                architecture: architecture.atosString!,
-                loadAddress: frame.binaryImage.loadAddress,
-                address: frame.cryptedAddress
-            )
-            logController.addLogMessage("Running command: \(command)")
+            guard let selectedBinaryPath = dsymFile.selectBinary(
+                forProcessName: frame.binaryImage.name,
+                uuid: frame.binaryImage.uuid,
+                architecture: architecture.atosString
+            ) else {
+                logController.addLogMessage("No matching DWARF binary found for process: \(frame.binaryImage.name)")
+                hasFailed = true
+                continue
+            }
 
-            let atosResult = command.run()
-
-            logController.addLogMessages([
-                "STDOUT:\n\(atosResult.output?.trimmed ?? "")",
-                "STDERR:\n\(atosResult.error?.trimmed ?? "")"
-            ])
-
-            if let symbolicatedAddress = atosResult.output?.trimmed, !symbolicatedAddress.isEmpty {
-                frame.symbolicatedAddress = symbolicatedAddress
-            } else {
-                logController.addLogMessage("Symbolication failed for address: \(frame.cryptedAddress)")
+            if !symbolicateFrame(frame: frame, dsymPath: selectedBinaryPath, architecture: architecture) {
                 hasFailed = true
             }
         }
 
         return !hasFailed
+    }
+
+    private func symbolicateFrame(frame: StackFrame, dsymPath: String, architecture: Architecture) -> Bool {
+        let command = symbolicationCommand(
+            dsymPath: dsymPath,
+            architecture: architecture.atosString!,
+            loadAddress: frame.binaryImage.loadAddress,
+            address: frame.cryptedAddress
+        )
+        logController.addLogMessage("Running command: \(command)")
+
+        let atosResult = command.run()
+
+        logController.addLogMessages([
+            "STDOUT:\n\(atosResult.output?.trimmed ?? "")",
+            "STDERR:\n\(atosResult.error?.trimmed ?? "")"
+        ])
+
+        if let symbolicatedAddress = atosResult.output?.trimmed, !symbolicatedAddress.isEmpty {
+            frame.symbolicatedAddress = symbolicatedAddress
+            return true
+        } else {
+            logController.addLogMessage("Symbolication failed for address: \(frame.cryptedAddress)")
+            return false
+        }
     }
 
     private func symbolicationCommand(

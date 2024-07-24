@@ -440,7 +440,8 @@ class DropZone: NSView {
 
                 if openPanel.runModal() == .OK {
                     let selectedFileURLs = openPanel.urls
-                    let acceptedFileURLs = self.delegate?.receivedFiles(dropZone: self, fileURLs: selectedFileURLs) ?? selectedFileURLs
+                    let acceptedFileURLs = self.delegate?.receivedFiles(dropZone: self,
+                                                                        fileURLs: selectedFileURLs) ?? selectedFileURLs
 
                     if self.allowsMultipleFiles {
                         self.files.formUnion(acceptedFileURLs)

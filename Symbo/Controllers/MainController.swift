@@ -20,8 +20,6 @@ class MainController {
     private let symbolicateButton = NSButton()
     private let viewLogsButton = NSButton()
 
-    private lazy var inputCoordinator = InputCoordinator(logController: logController)
-
     private var isSymbolicating: Bool = false {
         didSet {
             updateSymbolicateButtonState()
@@ -35,11 +33,18 @@ class MainController {
         }
     }
 
-    private func updateSymbolicateButtonState() {
-        symbolicateButton.isEnabled = isReportFileAvailable && !isSymbolicating
+    private var isDSYMAvailable: Bool = false {
+        didSet {
+            updateSymbolicateButtonState()
+        }
     }
 
-    private let logController: ViewableLogController = DefaultViewableLogController()
+    private func updateSymbolicateButtonState() {
+        symbolicateButton.isEnabled = isReportFileAvailable && isDSYMAvailable && !isSymbolicating
+    }
+
+    private lazy var logController: ViewableLogController = DefaultViewableLogController()
+    private lazy var inputCoordinator = InputCoordinator(logController: logController)
 
     init() {
         logController.delegate = self
@@ -165,6 +170,11 @@ class MainController {
         mainWindow.makeKeyAndOrderFront(nil)
     }
 
+    deinit {
+        logController.delegate = nil
+        inputCoordinator.delegate = nil
+    }
+
     @objc func symbolicate() {
         guard !isSymbolicating else { return }
 
@@ -194,7 +204,8 @@ class MainController {
 
             DispatchQueue.main.async {
                 if success {
-                    self.textWindowController.attributedText = symbolicator.symbolicatedContent ?? NSAttributedString(string: "")
+                    self.textWindowController.attributedText = symbolicator.symbolicatedContent ??
+                        NSAttributedString(string: "")
                     self.textWindowController.defaultSaveURL = reportFile.symbolicatedContentSaveURL
                     self.textWindowController.showWindow()
                 } else {
@@ -260,5 +271,9 @@ extension MainController: LogControllerDelegate {
 extension MainController: InputCoordinatorDelegate {
     func inputCoordinator(_ coordinator: InputCoordinator, didReceiveReportFile: Bool) {
         isReportFileAvailable = didReceiveReportFile
+    }
+
+    func inputCoordinator(_ coordinator: InputCoordinator, didChangeDSYMAvailability isAvailable: Bool) {
+        isDSYMAvailable = isAvailable
     }
 }

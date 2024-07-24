@@ -9,17 +9,10 @@ public struct DSYMFile: Equatable {
     let path: URL
     let filename: String
     let uuids: [BinaryUUID: String]
+    let binaryPaths: [String]
 
-    var binaryPath: String {
-        let dwarfPath = path.appendingPathComponent("Contents")
-                            .appendingPathComponent("Resources")
-                            .appendingPathComponent("DWARF")
-
-        guard let binary = (try? FileManager.default.contentsOfDirectory(atPath: dwarfPath.path))?.first else {
-            return path.path
-        }
-
-        return dwarfPath.appendingPathComponent(binary).path
+    var binaryPathsDescription: String {
+        return binaryPaths.joined(separator: ", ")
     }
 
     public static func dsymFiles(from url: URL) -> [DSYMFile] {
@@ -36,10 +29,22 @@ public struct DSYMFile: Equatable {
         }
     }
 
-    public init?(path: URL) {
+    init?(path: URL) {
         self.path = path
         self.filename = path.lastPathComponent
 
+        // Initialize binaryPaths
+        let dwarfPath = path.appendingPathComponent("Contents")
+            .appendingPathComponent("Resources")
+            .appendingPathComponent("DWARF")
+
+        if let binaries = try? FileManager.default.contentsOfDirectory(atPath: dwarfPath.path) {
+            self.binaryPaths = binaries.map { dwarfPath.appendingPathComponent($0).path }
+        } else {
+            self.binaryPaths = [path.path]
+        }
+
+        // Initialize uuids
         let result = "dwarfdump --uuid '\(path.path)'".run()
         let output = result.output?.trimmed
 
@@ -61,5 +66,21 @@ public struct DSYMFile: Equatable {
         }
 
         self.uuids = uuids
+    }
+}
+
+extension DSYMFile {
+    mutating func selectBinary(forProcessName processName: String,
+                               uuid: BinaryUUID? = nil,
+                               architecture: String? = nil) -> String? {
+        for binaryPath in binaryPaths {
+            let binaryName = URL(fileURLWithPath: binaryPath).lastPathComponent
+
+            // Check if the binary name matches the process name
+            if binaryName == processName {
+                return binaryPath
+            }
+        }
+        return nil
     }
 }

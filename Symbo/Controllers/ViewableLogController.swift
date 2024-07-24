@@ -17,7 +17,8 @@ class DefaultViewableLogController: DefaultLogController, ViewableLogController 
         didSet {
             // Update the text here so that if the window is already open, the text gets updated
             DispatchQueue.main.async {
-                self.textWindowController.attributedText = NSAttributedString(string: self.logMessages.joined(separator: "\n"))
+                let logString = self.logMessages.joined(separator: "\n")
+                self.textWindowController.attributedText = NSAttributedString(string: logString)
             }
         }
     }

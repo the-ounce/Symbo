@@ -99,7 +99,10 @@ class DSYMSearch {
         case .spotlight:
             searchSpotlight(forUUIDs: uuids, logHandler: logHandler, completion: completion)
         case .nonRecursive:
-            searchNonRecursive(forUUIDs: uuids, inDirectory: reportFileDirectory, logHandler: logHandler, completion: completion)
+            searchNonRecursive(forUUIDs: uuids,
+                               inDirectory: reportFileDirectory,
+                               logHandler: logHandler,
+                               completion: completion)
         case .recursive:
             searchRecursive(forUUIDs: uuids, logHandler: logHandler, completion: completion)
         }
@@ -117,7 +120,9 @@ class DSYMSearch {
                 completion(results, nil)
             } else {
                 logHandler("Spotlight query could not be started.")
-                completion(nil, NSError(domain: "DSYMSearch", code: 1, userInfo: [NSLocalizedDescriptionKey: "Spotlight query failed"]))
+                completion(nil, NSError(domain: "DSYMSearch",
+                                        code: 1,
+                                        userInfo: [NSLocalizedDescriptionKey: "Spotlight query failed"]))
             }
         }
     }
