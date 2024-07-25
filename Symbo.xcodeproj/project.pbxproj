@@ -143,7 +143,7 @@
 		B2C229221EF223C50015AB33 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B2C229261EF223C50015AB33 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B2C2292B1EF223C50015AB33 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B2C2292C1EF223C50015AB33 /* MacSymbolicator.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacSymbolicator.entitlements; sourceTree = "<group>"; };
+		B2C2292C1EF223C50015AB33 /* Symbo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Symbo.entitlements; sourceTree = "<group>"; };
 		B2EC0F4026450D0B00E5473C /* DSYMTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSYMTests.swift; sourceTree = "<group>"; };
 		B2F64E012B9339F700D1410D /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -215,7 +215,7 @@
 			children = (
 				B2C229261EF223C50015AB33 /* Assets.xcassets */,
 				B2C2292B1EF223C50015AB33 /* Info.plist */,
-				B2C2292C1EF223C50015AB33 /* MacSymbolicator.entitlements */,
+				B2C2292C1EF223C50015AB33 /* Symbo.entitlements */,
 				B200A3AC1EF23244006CD542 /* Main.storyboard */,
 			);
 			path = Resources;
