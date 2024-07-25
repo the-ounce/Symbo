@@ -1,34 +1,23 @@
-![MacSymbolicator](/Resources/Assets.xcassets/AppIcon.appiconset/Icon_128x128.png?raw=true)
+![MacSymbolicator](/Resources/Assets.xcassets/AppIcon.appiconset/128-mac.png?raw=true)
 
-# MacSymbolicator 2.6
-	
-A simple Mac app for symbolicating macOS/iOS crash reports.
+# Symbo
 
-Supports symbolicating:
+Enhanced tool for symbolication of macOS and iOS crash logs.
 
-- .crash and .ips crash reports
-- sample and spindump reports
+## Overview
 
-Includes a command-line interface (`MacSymbolicator.app/Contents/MacOS/MacSymbolicatorCLI`):
+Symbo is designed to help developers and engineers analyze crash reports by converting memory addresses into readable function names and line numbers.
+It's an improved and redesigned version of MacSymbolicator, originally created by [Mahdi Bchatnia (inket)](https://github.com/inket). 
 
-```
-USAGE: mac-symbolicator-cli [--translate-only] [--uuids-only] [--verbose] [--output <output>] <report-file-path> [<dsym-path> ...]
+## Features
 
-ARGUMENTS:
-  <report-file-path>      The report file: .crash/.ips for crash reports .txt for samples/spindumps
-  <dsym-path>             The dSYMs to use for symbolication
+Symbo's useful features:
 
-OPTIONS:
-  -t, --translate-only    Translate the crash report from .ips to .crash
-  -u, --uuids-only        Output binary images and UUIDs
-  -v, --verbose
-  -o, --output <output>   The output file to save the result to, instead of printing to stdout
-  -h, --help              Show help information.
-```
-
-[Download from Releases](https://github.com/inket/MacSymbolicator/releases)
-
-<a href="https://www.buymeacoffee.com/mahdibchatnia" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="48" width="173" ></a>
+- Drag-and-drop interface for crash logs and dSYM files
+- Automatic search of relevant dSYM files (exactly, no manual clicks needed)
+- Support for crash logs in TXT format
+- Crash log viewer with highlighting of symbolicated addresses
+- Easy export of symbolicated results
 
 # Screenshots
 
@@ -38,14 +27,23 @@ OPTIONS:
 
 ![MacSymbolicator](/screenshot3.png?raw=true)
 
-## Building from source
+## Building from Source
 
-Just clone and build with Xcode 13+
+1. Clone the repository
+2. Open the project in Xcode
+3. Build and run the application
 
 ## License
 
-License is GNU GPLv2.
+Symbo is released under the GNU General Public License v2.0 (GPLv2).
 
-## Contact
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
 
-@inket on GitHub/Twitter
+This software is a modified version of MacSymbolicator by Mahdi Bchatnia (inket).
+
+## Contributing
+
+Contributions to Symbo are welcome. Please submit pull requests or issues through the project's GitHub page.
