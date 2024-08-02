@@ -12,6 +12,9 @@ class TextWindowController: NSObject {
 
     private let savePanel = NSSavePanel()
 
+    private let textFinder = NSTextFinder()
+    private let searchField = NSSearchField()
+
     var defaultSaveURL: URL? {
         didSet {
             let saveButton = window.toolbar?.items.compactMap { $0.view as? NSButton }.first
@@ -46,6 +49,7 @@ class TextWindowController: NSObject {
         setupTextView()
         setupScrollView()
         setupToolbar()
+        setupSearchField()
     }
 
     private func setupToolbar() {
@@ -58,6 +62,10 @@ class TextWindowController: NSObject {
     private func setupTextView() {
         textView.autoresizingMask = .width
         textView.isEditable = false
+        textView.isIncrementalSearchingEnabled = true
+        textView.usesFindBar = true
+        textFinder.client = textView as? any NSTextFinderClient
+        textFinder.findBarContainer = window as? any NSTextFinderBarContainer
     }
 
     private func setupScrollView() {
@@ -74,6 +82,23 @@ class TextWindowController: NSObject {
             scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
+    }
+
+    private func setupSearchField() {
+        searchField.translatesAutoresizingMaskIntoConstraints = false
+        searchField.placeholderString = "Search"
+        searchField.target = self
+        searchField.action = #selector(performSearch)
+        window.contentView?.addSubview(searchField)
+
+        NSLayoutConstraint.activate([
+            searchField.topAnchor.constraint(equalTo: window.contentView!.topAnchor, constant: 8),
+            searchField.leadingAnchor.constraint(equalTo: window.contentView!.leadingAnchor, constant: 8),
+            searchField.trailingAnchor.constraint(equalTo: window.contentView!.trailingAnchor, constant: -8),
+            searchField.heightAnchor.constraint(equalToConstant: 24)
+        ])
+
+        searchField.isHidden = true
     }
 
     private func applyDefaultAttributesToText() {
@@ -130,6 +155,26 @@ class TextWindowController: NSObject {
 
     @objc func clear() {
         attributedText = NSAttributedString()
+    }
+
+    @objc private func performSearch() {
+        textFinder.performAction(.setSearchString)
+    }
+
+    func cancelOperation(_ sender: Any?) {
+        searchField.isHidden = true
+        window.makeFirstResponder(textView)
+    }
+
+    func performTextFinderAction(_ sender: Any?) {
+        if let action = NSTextFinder.Action(rawValue: (sender as AnyObject).tag) {
+            textFinder.performAction(action)
+        }
+    }
+
+    @objc func showSearchBar() {
+        searchField.isHidden = false
+        window.makeFirstResponder(searchField)
     }
 }
 

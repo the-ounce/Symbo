@@ -20,6 +20,14 @@ class MainController {
     private let symbolicateButton = NSButton()
     private let viewLogsButton = NSButton()
 
+    private var reportFileDropZone: DropZone {
+        return inputCoordinator.reportFileDropZone
+    }
+
+    private var dsymFilesDropZone: DropZone {
+        return inputCoordinator.dsymFilesDropZone
+    }
+
     private var isSymbolicating: Bool = false {
         didSet {
             updateSymbolicateButtonState()
@@ -30,6 +38,7 @@ class MainController {
     private var isReportFileAvailable: Bool = false {
         didSet {
             updateSymbolicateButtonState()
+            updateDropZonesLayout()
         }
     }
 
@@ -90,24 +99,11 @@ class MainController {
         contentView.setContentHuggingPriority(.defaultHigh, for: .vertical)
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
-        let dropZonesStackView = NSStackView()
-        dropZonesStackView.orientation = .horizontal
-        dropZonesStackView.distribution = .fillEqually
-        dropZonesStackView.spacing = 5
-        dropZonesStackView.translatesAutoresizingMaskIntoConstraints = false
+        dropZonesContainerView.translatesAutoresizingMaskIntoConstraints = false
+        dropZonesContainerView.addSubview(reportFileDropZone)
+        dropZonesContainerView.addSubview(dsymFilesDropZone)
 
-        let reportFileDropZoneContainer = NSView()
-        reportFileDropZoneContainer.translatesAutoresizingMaskIntoConstraints = false
-        reportFileDropZoneContainer.addSubview(reportFileDropZone)
-
-        let dsymFilesDropZoneContainer = NSView()
-        dsymFilesDropZoneContainer.translatesAutoresizingMaskIntoConstraints = false
-        dsymFilesDropZoneContainer.addSubview(dsymFilesDropZone)
-
-        dropZonesStackView.addArrangedSubview(reportFileDropZoneContainer)
-        dropZonesStackView.addArrangedSubview(dsymFilesDropZoneContainer)
-
-        contentView.addSubview(dropZonesStackView)
+        contentView.addSubview(dropZonesContainerView)
         contentView.addSubview(statusView)
         contentView.addSubview(titlebarView)
         statusView.addSubview(statusTextField)
@@ -131,22 +127,19 @@ class MainController {
             titleLabel.centerXAnchor.constraint(equalTo: titlebarView.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: titlebarView.centerYAnchor),
 
-            dropZonesStackView.topAnchor.constraint(equalTo: titlebarView.topAnchor, constant: 25),
-            dropZonesStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 5),
-            dropZonesStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -5),
-            dropZonesStackView.bottomAnchor.constraint(equalTo: statusView.topAnchor),
+            dropZonesContainerView.topAnchor.constraint(equalTo: titlebarView.bottomAnchor),
+            dropZonesContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 5),
+            dropZonesContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -5),
+            dropZonesContainerView.bottomAnchor.constraint(equalTo: statusView.topAnchor),
 
-            reportFileDropZone.topAnchor.constraint(equalTo: reportFileDropZoneContainer.topAnchor),
-            reportFileDropZone.leadingAnchor.constraint(equalTo: reportFileDropZoneContainer.leadingAnchor),
-            reportFileDropZone.trailingAnchor.constraint(equalTo: reportFileDropZoneContainer.trailingAnchor),
-            reportFileDropZone.bottomAnchor.constraint(equalTo: reportFileDropZoneContainer.bottomAnchor),
+            reportFileDropZone.topAnchor.constraint(equalTo: dropZonesContainerView.topAnchor),
+            reportFileDropZone.leadingAnchor.constraint(equalTo: dropZonesContainerView.leadingAnchor),
+            reportFileDropZone.bottomAnchor.constraint(equalTo: dropZonesContainerView.bottomAnchor),
 
-            dsymFilesDropZone.topAnchor.constraint(equalTo: dsymFilesDropZoneContainer.topAnchor),
-            dsymFilesDropZone.leadingAnchor.constraint(equalTo: dsymFilesDropZoneContainer.leadingAnchor),
-            dsymFilesDropZone.trailingAnchor.constraint(equalTo: dsymFilesDropZoneContainer.trailingAnchor),
-            dsymFilesDropZone.bottomAnchor.constraint(equalTo: dsymFilesDropZoneContainer.bottomAnchor),
+            dsymFilesDropZone.topAnchor.constraint(equalTo: dropZonesContainerView.topAnchor),
+            dsymFilesDropZone.trailingAnchor.constraint(equalTo: dropZonesContainerView.trailingAnchor),
+            dsymFilesDropZone.bottomAnchor.constraint(equalTo: dropZonesContainerView.bottomAnchor),
 
-            statusView.topAnchor.constraint(equalTo: dropZonesStackView.bottomAnchor),
             statusView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             statusView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             statusView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
@@ -164,10 +157,40 @@ class MainController {
             viewLogsButton.trailingAnchor.constraint(equalTo: statusView.trailingAnchor, constant: -20),
             viewLogsButton.centerYAnchor.constraint(equalTo: statusView.centerYAnchor),
             viewLogsButton.widthAnchor.constraint(equalToConstant: 120),
-            viewLogsButton.heightAnchor.constraint(equalToConstant: 20)
+            viewLogsButton.heightAnchor.constraint(equalToConstant: 24)
         ])
 
+        updateDropZonesLayout()
+
         mainWindow.makeKeyAndOrderFront(nil)
+    }
+
+    private func updateDropZonesLayout() {
+        if isReportFileAvailable {
+            NSLayoutConstraint.deactivate([
+                reportFileDropZone.trailingAnchor.constraint(equalTo: dropZonesContainerView.trailingAnchor)
+            ])
+            NSLayoutConstraint.activate([
+                // swiftlint:disable:next line_length
+                reportFileDropZone.widthAnchor.constraint(equalTo: dropZonesContainerView.widthAnchor, multiplier: 0.5, constant: -2.5),
+                dsymFilesDropZone.leadingAnchor.constraint(equalTo: reportFileDropZone.trailingAnchor, constant: 5),
+                // swiftlint:disable:next line_length
+                dsymFilesDropZone.widthAnchor.constraint(equalTo: dropZonesContainerView.widthAnchor, multiplier: 0.5, constant: -2.5)
+            ])
+            dsymFilesDropZone.isHidden = false
+        } else {
+            NSLayoutConstraint.deactivate([
+                // swiftlint:disable:next line_length
+                reportFileDropZone.widthAnchor.constraint(equalTo: dropZonesContainerView.widthAnchor, multiplier: 0.5, constant: -2.5),
+                dsymFilesDropZone.leadingAnchor.constraint(equalTo: reportFileDropZone.trailingAnchor, constant: 5),
+                // swiftlint:disable:next line_length
+                dsymFilesDropZone.widthAnchor.constraint(equalTo: dropZonesContainerView.widthAnchor, multiplier: 0.5, constant: -2.5)
+            ])
+            NSLayoutConstraint.activate([
+                reportFileDropZone.trailingAnchor.constraint(equalTo: dropZonesContainerView.trailingAnchor)
+            ])
+            dsymFilesDropZone.isHidden = true
+        }
     }
 
     deinit {

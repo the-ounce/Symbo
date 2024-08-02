@@ -16,7 +16,7 @@ class InputCoordinator {
     let reportFileDropZone = DropZone(
         fileTypes: [".crash", ".ips", ".txt"],
         allowsMultipleFiles: false,
-        text: "",
+        text: "Select or Drop your Report",
         activatesAppAfterDrop: true
     )
 
@@ -86,17 +86,15 @@ class InputCoordinator {
         isSearchingForDSYMs = true
         updateDSYMDetailText()
 
-        let searchTimeout: TimeInterval = 300 // 5 minutes timeout
-        let searchWorkItem = DispatchWorkItem { [weak self] in
-            self?.isSearchingForDSYMs = false
-            self?.updateDSYMDetailText()
-            self?.logController.addLogMessage("dSYM search timed out after \(Int(searchTimeout)) seconds.")
+        // Trigger system alerts for folder access before starting the search
+        FolderAccessTrigger.triggerAccessAlerts { [weak self] in
+            self?.performDSYMSearch(forUUIDs: remainingUUIDs, reportFile: reportFile)
         }
+    }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + searchTimeout, execute: searchWorkItem)
-
+    private func performDSYMSearch(forUUIDs uuids: [String], reportFile: ReportFile) {
         DSYMSearch.search(
-            forUUIDs: remainingUUIDs,
+            forUUIDs: uuids,
             reportFileDirectory: reportFile.path.deletingLastPathComponent().path,
             logHandler: logController.addLogMessage,
             progressHandler: { [weak self] progress in
@@ -104,19 +102,14 @@ class InputCoordinator {
                     self?.updateSearchProgress(progress)
                 }
             },
-            callback: { [weak self] finished, results in
+            callback: { [weak self] _, results in
                 DispatchQueue.main.async {
-                    searchWorkItem.cancel()
-
                     results?.forEach { dsymResult in
                         let dsymURL = URL(fileURLWithPath: dsymResult.path)
                         self?.dsymFilesDropZone.acceptFile(url: dsymURL)
                     }
 
-                    if finished {
-                        self?.isSearchingForDSYMs = false
-                    }
-
+                    self?.isSearchingForDSYMs = false
                     self?.updateDSYMDetailText()
                 }
             }
@@ -128,6 +121,42 @@ class InputCoordinator {
         // For example, update a progress bar or show percentage in the detail text
         let percentage = Int(progress * 100)
         dsymFilesDropZone.detailText = "Searching... \(percentage)%"
+    }
+
+    func retryDSYMSearch() {
+        guard let reportFile = reportFile else { return }
+
+        let remainingUUIDs = Array(remainingDSYMUUIDs)
+
+        guard !remainingUUIDs.isEmpty else {
+            updateDSYMDetailText()
+            return
+        }
+
+        isSearchingForDSYMs = true
+        updateDSYMDetailText()
+
+        DSYMSearch.search(
+            forUUIDs: remainingUUIDs,
+            reportFileDirectory: reportFile.path.deletingLastPathComponent().path,
+            logHandler: logController.addLogMessage,
+            progressHandler: { [weak self] progress in
+                DispatchQueue.main.async {
+                    self?.updateSearchProgress(progress)
+                }
+            },
+            callback: { [weak self] _, results in
+                DispatchQueue.main.async {
+                    results?.forEach { dsymResult in
+                        let dsymURL = URL(fileURLWithPath: dsymResult.path)
+                        self?.dsymFilesDropZone.acceptFile(url: dsymURL)
+                    }
+
+                    self?.isSearchingForDSYMs = false
+                    self?.updateDSYMDetailText()
+                }
+            }
+        )
     }
 
     func updateCrashDetailText() {
@@ -147,9 +176,9 @@ class InputCoordinator {
         case 0:
             reportFileDropZone.detailText = "(Symbolication not needed)"
         case 1:
-            reportFileDropZone.detailText = "(1 dSYM required)"
+            reportFileDropZone.detailText = "(1 dSYM needed)"
         default:
-            reportFileDropZone.detailText = "(\(expectedCount) dSYMs required)"
+            reportFileDropZone.detailText = "(\(expectedCount) dSYMs needed)"
         }
     }
 

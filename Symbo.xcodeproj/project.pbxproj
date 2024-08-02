@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		557F57502C5D98B000381E27 /* FolderAccessTrigger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557F574F2C5D98B000381E27 /* FolderAccessTrigger.swift */; };
 		B200A3AA1EF23244006CD542 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B200A3AC1EF23244006CD542 /* Main.storyboard */; };
 		B2036AD128DDDFBB00ED1268 /* ReportFileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2036AD028DDDFBB00ED1268 /* ReportFileTests.swift */; };
 		B2036AD328DDE4A500ED1268 /* TestFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2036AD228DDE4A500ED1268 /* TestFile.swift */; };
@@ -101,6 +102,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		557F574F2C5D98B000381E27 /* FolderAccessTrigger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderAccessTrigger.swift; sourceTree = "<group>"; };
 		B200A3AB1EF23244006CD542 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		B2036AD028DDDFBB00ED1268 /* ReportFileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportFileTests.swift; sourceTree = "<group>"; };
 		B2036AD228DDE4A500ED1268 /* TestFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFile.swift; sourceTree = "<group>"; };
@@ -174,6 +176,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		557F574E2C5D989E00381E27 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				557F574F2C5D98B000381E27 /* FolderAccessTrigger.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
 		B2036AE828DDE7FA00ED1268 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -317,6 +327,7 @@
 				B289E0A023F5F72A0019C28B /* DSYM Search */,
 				B2B74D941EF910E1000BBFD6 /* Views */,
 				B2B74D931EF910D6000BBFD6 /* Models */,
+				557F574E2C5D989E00381E27 /* Utilities */,
 				B2B74D921EF910CB000BBFD6 /* Extensions */,
 			);
 			path = Symbo;
@@ -531,6 +542,7 @@
 				B2BC4CB41EF22A6400B3189A /* CenteredWindow.swift in Sources */,
 				B26D624F232D497400DF1D1E /* LogController.swift in Sources */,
 				B227F8CD263512E2004131A2 /* InputCoordinator.swift in Sources */,
+				557F57502C5D98B000381E27 /* FolderAccessTrigger.swift in Sources */,
 				B236468E2618214F00AB9486 /* StackFrame.swift in Sources */,
 				B29D4B81290C421300E9D1A1 /* BinaryImageMap.swift in Sources */,
 				B27931341EF2875E00DDAA7D /* DropZone.swift in Sources */,
@@ -779,22 +791,25 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Resources/Symbo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 546K4L25BJ;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Symbo;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.6;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ua.mykyta.symbo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -806,22 +821,25 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Resources/Symbo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 546K4L25BJ;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Symbo;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.6;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ua.mykyta.symbo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
