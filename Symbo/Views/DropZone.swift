@@ -9,6 +9,12 @@ import Cocoa
 
 protocol DropZoneDelegate: AnyObject {
     func receivedFiles(dropZone: DropZone, fileURLs: [URL]) -> [URL]
+    func dropZone(_ dropZone: DropZone, didCreateReportFile reportFile: ReportFile)
+    func dropZone(_ dropZone: DropZone, didFailToCreateReportFileWithError error: Error)
+}
+
+protocol DropZonePasteDelegate: AnyObject {
+    func dropZoneDidReceivePaste(_ dropZone: DropZone)
 }
 
 class DropZone: NSView {
@@ -18,9 +24,15 @@ class DropZone: NSView {
         case multipleFilesEmpty
         case multipleFiles
     }
+    
+    enum InputMode {
+        case file
+        case text
+    }
 
     // MARK: Properties
     weak var delegate: DropZoneDelegate?
+    weak var pasteDelegate: DropZonePasteDelegate?
 
     var state: State {
         didSet {
@@ -115,6 +127,15 @@ class DropZone: NSView {
     private var isFlashing: Bool = false
 
     private var layoutConstraints: [NSLayoutConstraint] = []
+    
+    private let modeSwitch = NSSegmentedControl(labels: ["File", "Text"], trackingMode: .selectOne, target: nil, action: nil)
+    private let textInputView = TextInputView()
+    private(set) var inputMode: InputMode = .file {
+        didSet {
+            updateInputMode()
+        }
+    }
+    let showsInputModeSwitch: Bool
 
     // MARK: Methods
     init(
@@ -122,8 +143,10 @@ class DropZone: NSView {
         allowsMultipleFiles: Bool,
         text: String? = nil,
         detailText: String? = nil,
-        activatesAppAfterDrop: Bool = false
+        activatesAppAfterDrop: Bool = false,
+        showsInputModeSwitch: Bool = false
     ) {
+        self.showsInputModeSwitch = showsInputModeSwitch
         self.activatesAppAfterDrop = activatesAppAfterDrop
         self.allowsMultipleFiles = allowsMultipleFiles
         state = allowsMultipleFiles ? .multipleFilesEmpty : .oneFileEmpty
@@ -200,6 +223,10 @@ class DropZone: NSView {
         column.width = CGFloat(300)
         tableView.addTableColumn(column)
 
+        textInputView.isHidden = true
+        textInputView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(textInputView)
+
         layoutElements()
 
         if allowsMultipleFiles {
@@ -214,23 +241,28 @@ class DropZone: NSView {
 
             tableViewScrollView.isHidden = true
         }
-
-        if allowsMultipleFiles {
-            addSubview(tableViewScrollView)
+        
+        if showsInputModeSwitch {
+            modeSwitch.selectedSegment = 0
+            modeSwitch.target = self
+            modeSwitch.action = #selector(modeSwitchChanged)
+            modeSwitch.translatesAutoresizingMaskIntoConstraints = false
+            modeSwitch.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+            addSubview(modeSwitch)
 
             NSLayoutConstraint.activate([
-                tableViewScrollView.topAnchor.constraint(equalTo: topAnchor, constant: 6.5 + 60),
-                tableViewScrollView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6.5),
-                tableViewScrollView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6.5),
-                tableViewScrollView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -6.5)
+                modeSwitch.topAnchor.constraint(equalTo: topAnchor, constant: 16),
+                modeSwitch.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+                modeSwitch.widthAnchor.constraint(greaterThanOrEqualToConstant: 120),
+                
+                textInputView.topAnchor.constraint(equalTo: topAnchor),
+                textInputView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                textInputView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                textInputView.bottomAnchor.constraint(equalTo: bottomAnchor)
             ])
-
-            tableViewScrollView.isHidden = true
         }
 
-        let clickGestureRecognizer = NSClickGestureRecognizer(target: self, action: #selector(dropZoneClicked))
-        clickGestureRecognizer.isEnabled = !allowsMultipleFiles || tableViewScrollView.isHidden
-        addGestureRecognizer(clickGestureRecognizer)
+        updateInputMode()
     }
 
     private func layoutElements() {
@@ -279,8 +311,13 @@ class DropZone: NSView {
             textContainerStackView.alignment = .centerX
             NSLayoutConstraint.activate(layoutConstraints)
         }
-
+        
         updateRegisteredFileTypes()
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(handlePaste(_:)),
+                                               name: NSTextView.didChangeNotification,
+                                               object: textInputView.textView)
     }
 
     private func updateRegisteredFileTypes() {
@@ -298,6 +335,56 @@ class DropZone: NSView {
         let primaryFileType = _fileTypes[0]
         icon = NSWorkspace.shared.icon(forFileType: primaryFileType)
         updateText()
+    }
+
+    @objc private func modeSwitchChanged() {
+        inputMode = modeSwitch.selectedSegment == 0 ? .file : .text
+    }
+    
+    override func mouseDown(with event: NSEvent) {
+        let clickLocation = convert(event.locationInWindow, from: nil)
+        if modeSwitch.frame.contains(clickLocation) {
+            super.mouseDown(with: event)
+        } else if inputMode == .file {
+            openFilePicker()
+        }
+    }
+
+    @objc private func handlePaste(_ notification: Notification) {
+        guard inputMode == .text else { return }
+        
+        if let textView = notification.object as? NSTextView,
+           !textView.string.isEmpty,
+           let currentEvent = NSApp.currentEvent,
+           currentEvent.type == .keyDown,
+           currentEvent.modifierFlags.contains(.command),
+           currentEvent.charactersIgnoringModifiers == "v" {
+            createReportFileFromPastedText(textView.string)
+        }
+    }
+
+    private func createReportFileFromPastedText(_ text: String) {
+        do {
+            let reportFile = try ReportFile(content: text)
+            delegate?.dropZone(self, didCreateReportFile: reportFile)
+        } catch {
+            delegate?.dropZone(self, didFailToCreateReportFileWithError: error)
+        }
+    }
+
+    private func updateInputMode() {
+        switch inputMode {
+        case .file:
+            containerView.isHidden = false
+            textInputView.isHidden = true
+        case .text:
+            containerView.isHidden = true
+            textInputView.isHidden = false
+        }
+    }
+
+    func getTextInput() -> String? {
+        return inputMode == .text ? textInputView.getText() : nil
     }
 
     private func updateText() {
@@ -430,26 +517,25 @@ class DropZone: NSView {
         return true
     }
 
-    @objc
-    private func dropZoneClicked() {
+    private func openFilePicker() {
         DispatchQueue.main.async {
-                let openPanel = NSOpenPanel()
-                openPanel.allowsMultipleSelection = self.allowsMultipleFiles
-                openPanel.canChooseDirectories = false
-                openPanel.allowedFileTypes = self.fileTypesWithoutDot
+            let openPanel = NSOpenPanel()
+            openPanel.allowsMultipleSelection = self.allowsMultipleFiles
+            openPanel.canChooseDirectories = false
+            openPanel.allowedFileTypes = self.fileTypesWithoutDot
 
-                if openPanel.runModal() == .OK {
-                    let selectedFileURLs = openPanel.urls
-                    let acceptedFileURLs = self.delegate?.receivedFiles(dropZone: self,
-                                                                        fileURLs: selectedFileURLs) ?? selectedFileURLs
+            if openPanel.runModal() == .OK {
+                let selectedFileURLs = openPanel.urls
+                let acceptedFileURLs = self.delegate?.receivedFiles(dropZone: self,
+                                                                    fileURLs: selectedFileURLs) ?? selectedFileURLs
 
-                    if self.allowsMultipleFiles {
-                        self.files.formUnion(acceptedFileURLs)
-                    } else {
-                        self.files = acceptedFileURLs.last.flatMap { Set<URL>(arrayLiteral: $0) } ?? Set<URL>()
-                    }
+                if self.allowsMultipleFiles {
+                    self.files.formUnion(acceptedFileURLs)
+                } else {
+                    self.files = acceptedFileURLs.last.flatMap { Set<URL>(arrayLiteral: $0) } ?? Set<URL>()
                 }
             }
+        }
     }
 
     func flash() {

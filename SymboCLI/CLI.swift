@@ -60,7 +60,7 @@ struct MacSymbolicatorCLI: ParsableCommand {
             print("Symbolicating with:")
 
             let reportUUIDs = reportFile.uuidsForSymbolication.map { $0.pretty }.joined(separator: ", ")
-            print("Report: \(reportFile.path.path) [\(reportUUIDs)]")
+            print("Report: \(reportFile.path?.path) [\(reportUUIDs)]")
 
             let dsymDescriptions: [String] = dsymFiles.map { dsymFile in
                 let uuids = dsymFile.uuids.map { "    \($0.key.pretty): \($0.value)" }

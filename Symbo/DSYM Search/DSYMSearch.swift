@@ -29,7 +29,7 @@ class DSYMSearch {
     // MARK: - Public Methods
     static func search(
         forUUIDs uuids: [String],
-        reportFileDirectory: String,
+        reportFileDirectory: String?,
         logHandler: @escaping LogHandler,
         progressHandler: @escaping ProgressHandler,
         callback: @escaping Callback
@@ -97,7 +97,7 @@ class DSYMSearch {
     private static func searchLocation(
         _ location: SearchLocation,
         forUUIDs uuids: [String],
-        reportFileDirectory: String,
+        reportFileDirectory: String?,
         logHandler: @escaping LogHandler,
         completion: @escaping ([SearchResult]?, Error?) -> Void
     ) {
@@ -105,6 +105,9 @@ class DSYMSearch {
         case .spotlight:
             searchSpotlight(forUUIDs: uuids, logHandler: logHandler, completion: completion)
         case .nonRecursive:
+            guard let reportFileDirectory else {
+                return completion(nil, NSError(domain: "DSYMSearch", code: 2, userInfo: [NSLocalizedDescriptionKey: "No report file directory available for non-recursive search"]))
+            }
             searchNonRecursive(forUUIDs: uuids, inDirectory: reportFileDirectory, logHandler: logHandler, completion: completion)
         case .recursive:
             searchRecursive(forUUIDs: uuids, logHandler: logHandler, completion: completion)

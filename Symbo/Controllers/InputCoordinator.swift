@@ -17,7 +17,8 @@ class InputCoordinator {
         fileTypes: [".crash", ".ips", ".txt"],
         allowsMultipleFiles: false,
         text: "Select or Drop your Report",
-        activatesAppAfterDrop: true
+        activatesAppAfterDrop: true,
+        showsInputModeSwitch: true
     )
 
     let dsymFilesDropZone = DropZone(
@@ -25,7 +26,8 @@ class InputCoordinator {
         allowsMultipleFiles: true,
         text: "",
         detailText: "",
-        activatesAppAfterDrop: true
+        activatesAppAfterDrop: true,
+        showsInputModeSwitch: false
     )
 
     private(set) var reportFile: ReportFile?
@@ -95,7 +97,7 @@ class InputCoordinator {
     private func performDSYMSearch(forUUIDs uuids: [String], reportFile: ReportFile) {
         DSYMSearch.search(
             forUUIDs: uuids,
-            reportFileDirectory: reportFile.path.deletingLastPathComponent().path,
+            reportFileDirectory: reportFile.path?.deletingLastPathComponent().path,
             logHandler: logController.addLogMessage,
             progressHandler: { [weak self] progress in
                 DispatchQueue.main.async {
@@ -138,7 +140,7 @@ class InputCoordinator {
 
         DSYMSearch.search(
             forUUIDs: remainingUUIDs,
-            reportFileDirectory: reportFile.path.deletingLastPathComponent().path,
+            reportFileDirectory: reportFile.path?.deletingLastPathComponent().path,
             logHandler: logController.addLogMessage,
             progressHandler: { [weak self] progress in
                 DispatchQueue.main.async {
@@ -198,6 +200,11 @@ class InputCoordinator {
 
         dsymFilesDropZone.detailText = "\(prefix) \(count)"
     }
+    
+    func handleNewReportFile(_ reportFile: ReportFile) {
+        self.reportFile = reportFile
+        startSearchForDSYMs()
+    }
 }
 
 // MARK: - DropZoneDelegate
@@ -239,5 +246,19 @@ extension InputCoordinator: DropZoneDelegate {
         }
 
         return []
+    }
+    
+    func dropZone(_ dropZone: DropZone, didCreateReportFile reportFile: ReportFile) {
+        if dropZone == reportFileDropZone {
+            self.reportFile = reportFile
+            startSearchForDSYMs()
+            delegate?.inputCoordinator(self, didReceiveReportFile: true)
+            updateCrashDetailText()
+        }
+    }
+
+    func dropZone(_ dropZone: DropZone, didFailToCreateReportFileWithError error: Error) {
+        logController.addLogMessage("Error creating report file from pasted text: \(error.localizedDescription)")
+        delegate?.inputCoordinator(self, didReceiveReportFile: false)
     }
 }

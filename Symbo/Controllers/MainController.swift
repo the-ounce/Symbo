@@ -5,7 +5,7 @@
 
 import Cocoa
 
-class MainController {
+class MainController: DropZonePasteDelegate {
     private let mainWindow = CenteredWindow(width: 800, height: 400)
     private let textWindowController = TextWindowController(title: "Symbolicated Content", clearable: false)
 
@@ -58,6 +58,7 @@ class MainController {
     init() {
         logController.delegate = self
         inputCoordinator.delegate = self
+        reportFileDropZone.pasteDelegate = self
 
         let reportFileDropZone = inputCoordinator.reportFileDropZone
         let dsymFilesDropZone = inputCoordinator.dsymFilesDropZone
@@ -216,9 +217,28 @@ class MainController {
 
     @objc func symbolicate() {
         guard !isSymbolicating else { return }
-
-        guard let reportFile = inputCoordinator.reportFile else {
-            inputCoordinator.reportFileDropZone.flash()
+        
+        let reportFile: ReportFile?
+        
+        if reportFileDropZone.inputMode == .file {
+            reportFile = inputCoordinator.reportFile
+        } else {
+            if let textInput = reportFileDropZone.getTextInput(), !textInput.isEmpty {
+                do {
+                    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("temp_crash_report.txt")
+                    try textInput.write(to: tempURL, atomically: true, encoding: .utf8)
+                    reportFile = try ReportFile(path: tempURL)
+                } catch {
+                    logController.addLogMessage("Error creating report file from text input: \(error)")
+                    reportFile = nil
+                }
+            } else {
+                reportFile = nil
+            }
+        }
+        
+        guard let reportFile = reportFile else {
+            reportFileDropZone.flash()
             return
         }
 
@@ -296,6 +316,13 @@ class MainController {
     private func tappedUpdateButton(_ sender: AnyObject?) {
         guard let availableUpdateURL = availableUpdateURL else { return }
         NSWorkspace.shared.open(availableUpdateURL)
+    }
+    
+    func dropZoneDidReceivePaste(_ dropZone: DropZone) {
+        if dropZone === reportFileDropZone {
+            isReportFileAvailable = true
+            updateDropZonesLayout()
+        }
     }
 }
 

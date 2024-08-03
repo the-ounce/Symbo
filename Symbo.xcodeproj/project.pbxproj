@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		551AC83D2C5ECA7E0018DE43 /* TextInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 551AC83C2C5ECA7E0018DE43 /* TextInputView.swift */; };
 		557F57502C5D98B000381E27 /* FolderAccessTrigger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557F574F2C5D98B000381E27 /* FolderAccessTrigger.swift */; };
 		B200A3AA1EF23244006CD542 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B200A3AC1EF23244006CD542 /* Main.storyboard */; };
 		B2036AD128DDDFBB00ED1268 /* ReportFileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2036AD028DDDFBB00ED1268 /* ReportFileTests.swift */; };
@@ -102,6 +103,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		551AC83C2C5ECA7E0018DE43 /* TextInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInputView.swift; sourceTree = "<group>"; };
 		557F574F2C5D98B000381E27 /* FolderAccessTrigger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderAccessTrigger.swift; sourceTree = "<group>"; };
 		B200A3AB1EF23244006CD542 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		B2036AD028DDDFBB00ED1268 /* ReportFileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportFileTests.swift; sourceTree = "<group>"; };
@@ -277,6 +279,7 @@
 			children = (
 				B2BC4CB31EF22A6400B3189A /* CenteredWindow.swift */,
 				B27931331EF2875E00DDAA7D /* DropZone.swift */,
+				551AC83C2C5ECA7E0018DE43 /* TextInputView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -548,6 +551,7 @@
 				B27931341EF2875E00DDAA7D /* DropZone.swift in Sources */,
 				B25A35CD1EF9211F00F52E00 /* Symbolicator.swift in Sources */,
 				B21CA7E81EFCB61500AD9B75 /* FileSearch.swift in Sources */,
+				551AC83D2C5ECA7E0018DE43 /* TextInputView.swift in Sources */,
 				B2C229231EF223C50015AB33 /* AppDelegate.swift in Sources */,
 				B289E0A223F5F7350019C28B /* DSYMSearch.swift in Sources */,
 				B289E0A423F5F77C0019C28B /* SpotlightSearch.swift in Sources */,
