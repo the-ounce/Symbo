@@ -4,6 +4,7 @@
 //
 
 import Foundation
+// swiftlint:disable line_length
 
 struct SearchResult {
     let path: String
@@ -11,18 +12,21 @@ struct SearchResult {
 }
 
 class DSYMSearch {
+    // MARK: - Type Aliases
     typealias LogHandler = (String) -> Void
     typealias ProgressHandler = (Float) -> Void
-    typealias Callback = (_ finished: Bool, _ results: [SearchResult]?) -> Void
+    typealias Callback = (Bool, [SearchResult]?) -> Void
 
+    // MARK: - Private Properties
     private static let spotlightSearch = SpotlightSearch()
+    private static let searchQueue = DispatchQueue(label: "com.symbo.dsymsearch", attributes: .concurrent)
 
+    // MARK: - Enums
     enum SearchLocation: CaseIterable {
-        case spotlight
-        case nonRecursive
-        case recursive
+        case spotlight, nonRecursive, recursive
     }
 
+    // MARK: - Public Methods
     static func search(
         forUUIDs uuids: [String],
         reportFileDirectory: String,
@@ -31,63 +35,65 @@ class DSYMSearch {
         callback: @escaping Callback
     ) {
         let searchGroup = DispatchGroup()
-        let searchQueue = DispatchQueue(label: "com.macsymbolicator.dsymsearch", attributes: .concurrent)
-
+        let resultsQueue = DispatchQueue(label: "com.symbo.searchresults")
         var results: [SearchLocation: [SearchResult]] = [:]
         var errors: [SearchLocation: Error] = [:]
 
-        let totalLocations = SearchLocation.allCases.count
-        var completedLocations = 0
+        let timeoutWorkItem = setupSearchTimeout(searchGroup: searchGroup, logHandler: logHandler)
 
         for location in SearchLocation.allCases {
             searchGroup.enter()
             searchQueue.async {
-                self.searchLocation(
+                searchLocation(
                     location,
                     forUUIDs: uuids,
                     reportFileDirectory: reportFileDirectory,
                     logHandler: logHandler
                 ) { locationResults, error in
-                    if let error = error {
-                        errors[location] = error
-                    } else if let locationResults = locationResults {
-                        results[location] = locationResults
-                    }
+                    resultsQueue.async {
+                        if let error = error {
+                            errors[location] = error
+                        } else if let locationResults = locationResults {
+                            results[location] = locationResults
+                        }
 
-                    searchQueue.async {
-                        completedLocations += 1
-                        let progress = Float(completedLocations) / Float(totalLocations)
-                        progressHandler(progress)
+                        updateProgress(results: results, errors: errors, progressHandler: progressHandler)
+                        searchGroup.leave()
                     }
-
-                    searchGroup.leave()
                 }
             }
         }
 
-        // Timeout for the entire search process
-        let timeoutSeconds: Double = 300 // 5 minutes
-        let timeoutWorkItem = DispatchWorkItem {
-            logHandler("DSYMSearch timed out after \(Int(timeoutSeconds)) seconds.")
-            searchGroup.leave() // Force the group to finish
-        }
-
-        DispatchQueue.global().asyncAfter(deadline: .now() + timeoutSeconds, execute: timeoutWorkItem)
-
         searchGroup.notify(queue: .main) {
-            timeoutWorkItem.cancel() // Cancel the timeout if all searches complete in time
-
+            timeoutWorkItem.cancel()
             let allResults = results.values.flatMap { $0 }
-            let allErrors = errors.values
-
-            if !allErrors.isEmpty {
-                logHandler("Errors occurred during DSYMSearch: \(allErrors)")
-            }
-
             callback(errors.isEmpty, allResults)
         }
     }
 
+    // MARK: - Private Helper Methods
+    private static func updateProgress(results: [SearchLocation: [SearchResult]], errors: [SearchLocation: Error], progressHandler: @escaping ProgressHandler) {
+        let progress = Float(results.count + errors.count) / Float(SearchLocation.allCases.count)
+        DispatchQueue.main.async {
+            progressHandler(progress)
+        }
+    }
+
+    private static func setupSearchTimeout(searchGroup: DispatchGroup, logHandler: @escaping LogHandler) -> DispatchWorkItem {
+        let timeoutSeconds: Double = 300 // 5 minutes
+        let timeoutWorkItem = DispatchWorkItem {
+            logHandler("DSYMSearch timed out after \(Int(timeoutSeconds)) seconds.")
+            searchGroup.notify(queue: .main) {
+                logHandler("Search completed or timed out.")
+            }
+        }
+
+        DispatchQueue.global().asyncAfter(deadline: .now() + timeoutSeconds, execute: timeoutWorkItem)
+
+        return timeoutWorkItem
+    }
+
+    // MARK: - Search Methods
     private static func searchLocation(
         _ location: SearchLocation,
         forUUIDs uuids: [String],
@@ -99,10 +105,7 @@ class DSYMSearch {
         case .spotlight:
             searchSpotlight(forUUIDs: uuids, logHandler: logHandler, completion: completion)
         case .nonRecursive:
-            searchNonRecursive(forUUIDs: uuids,
-                               inDirectory: reportFileDirectory,
-                               logHandler: logHandler,
-                               completion: completion)
+            searchNonRecursive(forUUIDs: uuids, inDirectory: reportFileDirectory, logHandler: logHandler, completion: completion)
         case .recursive:
             searchRecursive(forUUIDs: uuids, logHandler: logHandler, completion: completion)
         }
@@ -120,9 +123,7 @@ class DSYMSearch {
                 completion(results, nil)
             } else {
                 logHandler("Spotlight query could not be started.")
-                completion(nil, NSError(domain: "DSYMSearch",
-                                        code: 1,
-                                        userInfo: [NSLocalizedDescriptionKey: "Spotlight query failed"]))
+                completion(nil, NSError(domain: "DSYMSearch", code: 1, userInfo: [NSLocalizedDescriptionKey: "Spotlight query failed"]))
             }
         }
     }
@@ -134,12 +135,7 @@ class DSYMSearch {
         completion: @escaping ([SearchResult]?, Error?) -> Void
     ) {
         logHandler("Non-recursive file search starting at \(directory) for UUIDs: \(uuids)")
-        let results = FileSearch
-            .nonRecursive
-            .in(directory: directory)
-            .with(logHandler: logHandler)
-            .search(fileExtension: "dsym").sorted().matching(uuids: uuids)
-
+        let results = performFileSearch(forUUIDs: uuids, inDirectory: directory, recursive: false, logHandler: logHandler)
         logHandler("Non-recursive search completed. Found \(results.count) results.")
         completion(results, nil)
     }
@@ -151,13 +147,19 @@ class DSYMSearch {
     ) {
         let searchDirectory = "~/Library/Developer/Xcode/Archives/"
         logHandler("Recursive file search starting at \(searchDirectory) for UUIDs: \(uuids)")
-        let results = FileSearch
-            .recursive
-            .in(directory: searchDirectory)
-            .with(logHandler: logHandler)
-            .search(fileExtension: "dsym").sorted().matching(uuids: uuids)
-
+        let results = performFileSearch(forUUIDs: uuids, inDirectory: searchDirectory, recursive: true, logHandler: logHandler)
         logHandler("Recursive search completed. Found \(results.count) results.")
         completion(results, nil)
     }
+
+    private static func performFileSearch(forUUIDs uuids: [String], inDirectory directory: String, recursive: Bool, logHandler: @escaping LogHandler) -> [SearchResult] {
+        let fileSearch = recursive ? FileSearch.recursive : FileSearch.nonRecursive
+        return fileSearch
+            .in(directory: directory)
+            .with(logHandler: logHandler)
+            .search(fileExtension: "dsym")
+            .sorted()
+            .matching(uuids: uuids)
+    }
 }
+// swiftlint:enable line_length
