@@ -200,7 +200,7 @@ class InputCoordinator {
 
         dsymFilesDropZone.detailText = "\(prefix) \(count)"
     }
-    
+
     func handleNewReportFile(_ reportFile: ReportFile) {
         self.reportFile = reportFile
         startSearchForDSYMs()
@@ -247,7 +247,7 @@ extension InputCoordinator: DropZoneDelegate {
 
         return []
     }
-    
+
     func dropZone(_ dropZone: DropZone, didCreateReportFile reportFile: ReportFile) {
         if dropZone == reportFileDropZone {
             self.reportFile = reportFile

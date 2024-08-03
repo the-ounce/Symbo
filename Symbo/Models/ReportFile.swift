@@ -25,13 +25,13 @@ public class ReportFile {
     var symbolicatedContent: String?
 
     var symbolicatedContentSaveURL: URL {
+        let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
+
         if let path = path {
-            let directory = path.deletingLastPathComponent()
             let originalFilename = path.lastPathComponent
             let newFilename = "[S] " + (originalFilename as NSString).deletingPathExtension + ".crash"
-            return directory.appendingPathComponent(newFilename)
+            return desktopURL.appendingPathComponent(newFilename)
         } else {
-            let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
             return desktopURL.appendingPathComponent("[S] Untitled.crash")
         }
     }
@@ -84,76 +84,3 @@ public class ReportFile {
         }
     }
 }
-
-//public class ReportFile {
-//    enum InitializationError: Error {
-//        case readingFile(Error)
-//        case emptyFile
-//        case translation(Translator.Error)
-//        case other(Error)
-//    }
-//
-//    let path: URL?
-//    let filename: String
-//    let processes: [ReportProcess]
-//
-//    lazy var uuidsForSymbolication: [BinaryUUID] = {
-//        processes.flatMap { $0.uuidsForSymbolication }
-//    }()
-//
-//    let content: String
-//    var symbolicatedContent: String?
-//
-//    var symbolicatedContentSaveURL: URL {
-//        if let path = path {
-//            let directory = path.deletingLastPathComponent()
-//            let originalFilename = path.lastPathComponent
-//            let newFilename = "[S] " + (originalFilename as NSString).deletingPathExtension + ".crash"
-//            return directory.appendingPathComponent(newFilename)
-//        } else {
-//            let directory = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
-//            return directory.appendingPathComponent("[S] Untitled.crash")
-//        }
-//    }
-//
-//    public convenience init(path: URL) throws {
-//        let originalContent: String
-//
-//        do {
-//            originalContent = try String(contentsOf: path, encoding: .utf8)
-//        } catch {
-//            throw InitializationError.readingFile(error)
-//        }
-//
-//        try self.init(content: originalContent, path: path)
-//    }
-//
-//    public init(content: String, path: URL? = nil) throws {
-//        guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-//            throw InitializationError.emptyFile
-//        }
-//
-//        self.path = path
-//        self.filename = path?.lastPathComponent ?? "Untitled"
-//
-//        // Convert to TXT format
-//        do {
-//            self.content = try Self.convertToTXTFormat(content, path: path?)
-//        } catch {
-//            throw InitializationError.translation(error as? Translator.Error ?? .unexpectedOutput)
-//        }
-//
-//        // Initialize processes after content is set
-//        self.processes = ReportProcess.find(in: self.content)
-//    }
-//
-//    private static func convertToTXTFormat(_ content: String, path: URL) throws -> String {
-//        // If it's already in TXT format, return as is
-//        if !content.hasPrefix("{") {
-//            return content
-//        }
-//
-//        // If it's in IPS format, convert to TXT
-//        return try Translator.translatedCrash(forIPSAt: path)
-//    }
-//}

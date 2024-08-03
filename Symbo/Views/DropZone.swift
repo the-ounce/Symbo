@@ -24,7 +24,7 @@ class DropZone: NSView {
         case multipleFilesEmpty
         case multipleFiles
     }
-    
+
     enum InputMode {
         case file
         case text
@@ -127,7 +127,8 @@ class DropZone: NSView {
     private var isFlashing: Bool = false
 
     private var layoutConstraints: [NSLayoutConstraint] = []
-    
+
+    // swiftlint:disable:next line_length
     private let modeSwitch = NSSegmentedControl(labels: ["File", "Text"], trackingMode: .selectOne, target: nil, action: nil)
     private let textInputView = TextInputView()
     private(set) var inputMode: InputMode = .file {
@@ -226,6 +227,9 @@ class DropZone: NSView {
         textInputView.isHidden = true
         textInputView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(textInputView)
+        textInputView.onClearButtonClicked = { [weak self] in
+            self?.handleTextCleared()
+        }
 
         layoutElements()
 
@@ -241,7 +245,7 @@ class DropZone: NSView {
 
             tableViewScrollView.isHidden = true
         }
-        
+
         if showsInputModeSwitch {
             modeSwitch.selectedSegment = 0
             modeSwitch.target = self
@@ -254,7 +258,7 @@ class DropZone: NSView {
                 modeSwitch.topAnchor.constraint(equalTo: topAnchor, constant: 16),
                 modeSwitch.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
                 modeSwitch.widthAnchor.constraint(greaterThanOrEqualToConstant: 120),
-                
+
                 textInputView.topAnchor.constraint(equalTo: topAnchor),
                 textInputView.leadingAnchor.constraint(equalTo: leadingAnchor),
                 textInputView.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -263,6 +267,7 @@ class DropZone: NSView {
         }
 
         updateInputMode()
+
     }
 
     private func layoutElements() {
@@ -311,9 +316,9 @@ class DropZone: NSView {
             textContainerStackView.alignment = .centerX
             NSLayoutConstraint.activate(layoutConstraints)
         }
-        
+
         updateRegisteredFileTypes()
-        
+
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(handlePaste(_:)),
                                                name: NSTextView.didChangeNotification,
@@ -340,7 +345,7 @@ class DropZone: NSView {
     @objc private func modeSwitchChanged() {
         inputMode = modeSwitch.selectedSegment == 0 ? .file : .text
     }
-    
+
     override func mouseDown(with event: NSEvent) {
         let clickLocation = convert(event.locationInWindow, from: nil)
         if modeSwitch.frame.contains(clickLocation) {
@@ -352,7 +357,7 @@ class DropZone: NSView {
 
     @objc private func handlePaste(_ notification: Notification) {
         guard inputMode == .text else { return }
-        
+
         if let textView = notification.object as? NSTextView,
            !textView.string.isEmpty,
            let currentEvent = NSApp.currentEvent,
@@ -372,6 +377,10 @@ class DropZone: NSView {
         }
     }
 
+    private func handleTextCleared() {
+        updateInputMode()
+    }
+
     private func updateInputMode() {
         switch inputMode {
         case .file:
@@ -380,6 +389,7 @@ class DropZone: NSView {
         case .text:
             containerView.isHidden = true
             textInputView.isHidden = false
+            textInputView.updateClearButtonVisibility()
         }
     }
 

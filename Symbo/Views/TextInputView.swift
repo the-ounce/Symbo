@@ -10,6 +10,9 @@ import AppKit
 class TextInputView: NSView {
     private let scrollView = NSScrollView()
     let textView = NSTextView()
+    private let clearButton = NSButton(title: "Clear", target: nil, action: nil)
+
+    var onClearButtonClicked: (() -> Void)?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -21,20 +24,16 @@ class TextInputView: NSView {
     }
 
     private func setupViews() {
+        setupScrollView()
+        setupTextView()
+        setupClearButton()
+    }
+
+    private func setupScrollView() {
         scrollView.hasVerticalScroller = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.drawsBackground = false
         addSubview(scrollView)
-
-        textView.backgroundColor = .clear
-        textView.textColor = .white
-        textView.font = NSFont.systemFont(ofSize: 14)
-        textView.isEditable = true
-        textView.isSelectable = true
-        textView.allowsUndo = true
-        textView.autoresizingMask = [.width, .height]
-
-        scrollView.documentView = textView
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: topAnchor, constant: 50),
@@ -44,11 +43,57 @@ class TextInputView: NSView {
         ])
     }
 
+    private func setupTextView() {
+        textView.backgroundColor = .clear
+        textView.textColor = .white
+        textView.font = NSFont.systemFont(ofSize: 14)
+        textView.isEditable = true
+        textView.isSelectable = true
+        textView.allowsUndo = true
+        textView.autoresizingMask = [.width, .height]
+        textView.delegate = self
+
+        scrollView.documentView = textView
+    }
+
+    private func setupClearButton() {
+        clearButton.bezelStyle = .rounded
+        clearButton.controlSize = .regular
+        clearButton.font = NSFont.systemFont(ofSize: 12)
+        clearButton.target = self
+        clearButton.action = #selector(clearButtonClicked)
+        clearButton.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(clearButton)
+
+        NSLayoutConstraint.activate([
+            clearButton.topAnchor.constraint(equalTo: topAnchor, constant: 16),
+            clearButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16)
+        ])
+
+        updateClearButtonVisibility()
+    }
+
+    @objc private func clearButtonClicked() {
+        setText("")
+        onClearButtonClicked?()
+    }
+
+    func updateClearButtonVisibility() {
+        clearButton.isHidden = textView.string.isEmpty
+    }
+
     func getText() -> String {
         return textView.string
     }
 
     func setText(_ text: String) {
         textView.string = text
+        updateClearButtonVisibility()
+    }
+}
+
+extension TextInputView: NSTextViewDelegate {
+    func textDidChange(_ notification: Notification) {
+        updateClearButtonVisibility()
     }
 }

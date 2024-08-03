@@ -217,9 +217,9 @@ class MainController: DropZonePasteDelegate {
 
     @objc func symbolicate() {
         guard !isSymbolicating else { return }
-        
+
         let reportFile: ReportFile?
-        
+
         if reportFileDropZone.inputMode == .file {
             reportFile = inputCoordinator.reportFile
         } else {
@@ -236,7 +236,7 @@ class MainController: DropZonePasteDelegate {
                 reportFile = nil
             }
         }
-        
+
         guard let reportFile = reportFile else {
             reportFileDropZone.flash()
             return
@@ -317,7 +317,7 @@ class MainController: DropZonePasteDelegate {
         guard let availableUpdateURL = availableUpdateURL else { return }
         NSWorkspace.shared.open(availableUpdateURL)
     }
-    
+
     func dropZoneDidReceivePaste(_ dropZone: DropZone) {
         if dropZone === reportFileDropZone {
             isReportFileAvailable = true
