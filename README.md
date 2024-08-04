@@ -14,6 +14,7 @@ It's an improved and redesigned version of MacSymbolicator, originally created b
 Symbo's useful features:
 
 - Drag-and-drop interface for crash logs and dSYM files
+- Text input option for pasting a crash log directly
 - Automatic search of relevant dSYM files (exactly, no manual clicks needed)
 - Support for crash logs in TXT format
 - Crash log viewer with highlighting of symbolicated addresses
@@ -26,6 +27,8 @@ Symbo's useful features:
 ![MacSymbolicator](/screenshot2.png?raw=true)
 
 ![MacSymbolicator](/screenshot3.png?raw=true)
+
+![MacSymbolicator](/screenshot4.png?raw=true)
 
 ## Building from Source
 
