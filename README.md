@@ -20,6 +20,10 @@ Symbo's useful features:
 - Crash log viewer with highlighting of symbolicated addresses
 - Easy export of symbolicated results
 
+# How It Works
+
+![MacSymbolicator](/howitworks.gif?raw=true)
+
 # Screenshots
 
 ![MacSymbolicator](/screenshot1.png?raw=true)
