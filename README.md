@@ -26,7 +26,7 @@ Symbo's useful features:
 
 ![MacSymbolicator](/screenshot2.png?raw=true)
 
-![MacSymbolicator](/screenshot3.png?raw=true)
+![MacSymbolicator](/screenshot3_1.png?raw=true)
 
 ![MacSymbolicator](/screenshot4.png?raw=true)
 
